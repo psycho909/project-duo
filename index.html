@@ -353,7 +353,7 @@ pre { background: var(--bg); overflow-x: auto; margin: 12px 0 0; }
   </section>
 
   <!-- 版本號：每次修改頁面時更新 data-version 與 data-date -->
-  <footer class="version" id="version" data-version="1.2.0" data-date="2026-11-02">版本 1.2.0（2026-11-02）</footer>
+  <footer class="version" id="version" data-version="1.2.1" data-date="2026-11-02">版本 1.2.1（2026-11-02）</footer>
 </main>
 
 <!-- 量測 100svh／lvh／dvh、安全區域與 1rem 用的隱形元素 -->
@@ -507,14 +507,15 @@ const rwdFor = (w, h) => {
   const scale = short || t.px ? 1 : Math.min(w, t.max) / t.base;
   return { t, short, scale, raw: w / t.base };
 };
-// 實測（LambdaTest）與規範附錄的尺寸，高度為 100svh
+// 實測（LambdaTest）的尺寸，高度為 100svh；iPhone Duo 與 Pro Max 為整片螢幕的 point（見 docs/iphone-duo-specs.md）
 const KNOWN = [
   ["Fold8 內直・左右分割", 349, 790], ["Fold8 Ultra 外螢幕・直", 360, 698], ["Fold8 Ultra 內直・左右分割", 373, 693],
   ["Fold8 Ultra 內橫・左右分割", 414, 578], ["iPhone 18 Pro Max（附錄）", 440, 956], ["Fold8 內橫・左右分割", 463, 520],
-  ["iPhone Duo 外螢幕（附錄）", 466, 678], ["Fold8 外螢幕・直", 475, 605], ["iPhone Duo 內螢幕（附錄）", 626, 890],
+  ["iPhone Duo 外螢幕（官方像素 ÷ 3）", 466, 678], ["Fold8 外螢幕・直", 475, 605], ["iPhone Duo 內螢幕・直（模擬器）", 669, 951],
   ["Fold8 外螢幕・橫", 663, 389], ["Fold8 內螢幕・直", 704, 750], ["Fold8 內直・上下分割", 704, 304],
   ["Fold8 Ultra 內螢幕・直", 752, 653], ["Fold8 Ultra 內直・上下分割", 752, 257], ["Fold8 Ultra 外螢幕・橫", 756, 274],
   ["Fold8 Ultra 內螢幕・橫", 834, 578], ["Fold8 Ultra 內橫・上下分割", 834, 223], ["Fold8 內螢幕・橫", 932, 520],
+  ["iPhone Duo 內螢幕・橫（模擬器）", 951, 669],
 ];
 const rwdLabel = ({ t, short, scale, raw }) =>
   short ? `矮畫面 → A 版，1 倍` : t.px ? `${t.id}，px` : `${t.id}，${scale.toFixed(2)} 倍${raw > scale + 0.005 ? `（原 ${raw.toFixed(2)}，已封頂）` : ""}`;
