@@ -150,27 +150,14 @@ button[aria-pressed="true"] { background: var(--accent); border-color: var(--acc
 
 ul.rules { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: 14px; }
 
-/* 模擬器 */
-.presets { display: flex; flex-wrap: wrap; gap: 6px; }
-.preset-group { display: grid; gap: 6px; }
-.preset-group > span { font-size: 12.5px; color: var(--muted); }
-.stage { background: var(--surface); overflow: hidden; display: flex; justify-content: center; }
-.screen-box { position: relative; border: 3px solid var(--ink); border-radius: 18px; background: var(--bg); transform-origin: top left; flex: none; }
-.screen-box iframe { position: absolute; border: 0; background: var(--bg); border-radius: 12px; }
-.screen-box .other { position: absolute; inset: 0; border-radius: 14px; background: repeating-linear-gradient(-45deg, var(--hatch) 0 2px, transparent 2px 12px); display: grid; place-items: center; color: var(--muted); font-size: 22px; }
-.note { color: var(--muted); font-size: 12.5px; }
-
 details { border-top: 1px solid var(--rule); padding-top: 12px; }
 summary { cursor: pointer; font-weight: 700; }
 pre { background: var(--surface); overflow-x: auto; margin: 12px 0 0; }
 
-.sim-banner { background: var(--hinge); color: #1b1203; font-size: 12px; text-align: center; padding: 2px; }
-[data-embed] .host-only { display: none !important; }
 
 @media (prefers-reduced-motion: reduce) { .size { transition: none; } }
 </style>
 
-<div class="sim-banner" id="simBanner" hidden></div>
 <div class="app">
   <!-- Pane A：讀數與量測（單欄時在上；跨摺痕時在第一個 segment） -->
   <section class="pane pane-a">
@@ -247,13 +234,6 @@ pre { background: var(--surface); overflow-x: auto; margin: 12px 0 0; }
       </ol>
     </section>
 
-    <section class="block host-only">
-      <h2>模擬其他裝置</h2>
-      <div id="presets" class="preset-group"></div>
-      <div class="stage" id="stage"></div>
-      <p class="note">尺寸是估計值：Z Fold8 依前代推估，iPhone Duo 依傳聞規格。拿到實機數據後，修改程式中的 <code>PRESETS</code>。</p>
-    </section>
-
     <section class="block">
       <h2>判斷邏輯</h2>
       <ul class="rules">
@@ -300,30 +280,6 @@ pre { background: var(--surface); overflow-x: auto; margin: 12px 0 0; }
 </div>
 
 <script>
-/* ===== 裝置參考尺寸（CSS px，估計值，請以實機量測修正）=====
-   screen：整個實體螢幕；win：瀏覽器視窗；winAt：視窗在螢幕上的位置；segments：[x, y, w, h]，相對於視窗 */
-const PRESETS = {
-  "fold-cover": { device: "Galaxy Z Fold8", label: "外螢幕",     screen: [412, 960], win: [412, 960] },
-  "fold-inner": { device: "Galaxy Z Fold8", label: "內螢幕展開", screen: [750, 832], win: [750, 832] },
-  "fold-split": { device: "Galaxy Z Fold8", label: "分割視窗",   screen: [750, 832], win: [373, 832], winAt: [0, 0] },
-  "fold-popup": { device: "Galaxy Z Fold8", label: "浮動視窗",   screen: [750, 832], win: [400, 560], winAt: [175, 136] },
-  "fold-flex":  { device: "Galaxy Z Fold8", label: "半摺上下",   screen: [832, 750], win: [832, 750], posture: "folded",
-                  segments: [[0, 0, 832, 367], [0, 383, 832, 367]] },
-  "iph-cover":  { device: "iPhone Duo", label: "外螢幕",     screen: [474, 696], win: [474, 696] },
-  "iph-inner":  { device: "iPhone Duo", label: "內螢幕展開", screen: [904, 640], win: [904, 640] },
-  "iph-split":  { device: "iPhone Duo", label: "分割視窗",   screen: [904, 640], win: [448, 640], winAt: [456, 0] },
-  "iph-span":   { device: "iPhone Duo", label: "跨雙螢幕",   screen: [904, 640], win: [904, 640], posture: "folded",
-                  segments: [[0, 0, 444, 640], [460, 0, 444, 640]] },
-  "desktop":    { device: "其他", label: "桌機視窗", screen: [1440, 900], win: [1280, 800], winAt: [80, 50], fine: true },
-};
-
-// 模擬器用 srcdoc 載入同一份 HTML，並以 iframe name 傳入 preset（file://、http、Artifact 都可用）
-const SOURCE = "<!doctype html>\n" + document.documentElement.outerHTML;
-const params = new URLSearchParams(location.search);
-const simKey = params.get("sim") ?? (window.name.startsWith("sim:") ? window.name.slice(4) : null);
-const SIM = PRESETS[simKey] ? simKey : null;
-const EMBED = params.has("embed") || window.name.startsWith("sim:");
-if (EMBED) document.documentElement.dataset.embed = "";
 let FRAMED = false;
 try { FRAMED = window.top !== window.self; } catch { FRAMED = true; }
 
@@ -344,18 +300,6 @@ function readPosture() {
 }
 
 function readEnv() {
-  if (SIM) {
-    const p = PRESETS[SIM];
-    return {
-      w: innerWidth, h: innerHeight, vw: innerWidth, vh: innerHeight,
-      sw: p.screen[0], sh: p.screen[1], aw: p.screen[0], ah: p.screen[1],
-      dpr: 3, coarse: !p.fine, posture: p.posture ?? "continuous",
-      segments: (p.segments ?? []).map(([x, y, width, height]) => ({ x, y, width, height })),
-      winAt: p.winAt ?? [0, 0],
-      orientation: p.screen[0] > p.screen[1] ? "landscape-primary" : "portrait-primary",
-      displayMode: "browser", simulated: true,
-    };
-  }
   return {
     w: innerWidth, h: innerHeight,
     vw: visualViewport?.width ?? innerWidth, vh: visualViewport?.height ?? innerHeight,
@@ -364,7 +308,6 @@ function readEnv() {
     posture: readPosture(), segments: readSegments(), winAt: [0, 0],
     orientation: screen.orientation?.type ?? (mq("(orientation: landscape)") ? "landscape" : "portrait"),
     displayMode: ["fullscreen", "standalone", "minimal-ui"].find(m => mq(`(display-mode: ${m})`)) ?? "browser",
-    simulated: false,
   };
 }
 
@@ -468,7 +411,7 @@ function render() {
   // 視窗越寬，數字字寬越寬：320px → wdth 62，1000px → wdth 125
   root.style.setProperty("--wdth", Math.round(Math.min(125, Math.max(62, 62 + (env.w - 320) / 680 * 63))));
 
-  // 跨摺痕時，用 segment 尺寸驅動 grid（模擬模式也適用）
+  // 跨摺痕時，用 segment 尺寸驅動 grid
   if (r.layout === "span-h" || r.layout === "span-v") {
     const [a, b] = env.segments, h = r.layout === "span-h";
     root.style.setProperty("--seg-a", (h ? a.width : a.height) + "px");
@@ -484,7 +427,7 @@ function render() {
   $("fCount").textContent = r.screenCount;
   $("fClass").textContent = r.sizeClass;
   $("fFill").textContent = `${Math.round(r.fillW * 100)}%`;
-  $("frameNote").hidden = !(FRAMED && !EMBED);
+  $("frameNote").hidden = !FRAMED;
   for (const li of $("modes").children) li.setAttribute("aria-current", String(li.dataset.group === meta.group));
   drawDiagram(env, r);
 
@@ -510,63 +453,10 @@ function render() {
     ["主要指標是觸控（pointer: coarse）", yn(env.coarse)],
     ["display-mode", env.displayMode],
     ["嵌在框架內", yn(FRAMED)],
-    ["模擬裝置", env.simulated ? `${PRESETS[SIM].device} ${PRESETS[SIM].label}` : yn(false)],
   ];
   $("metrics").innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
   lastReport = rows.map(([k, v]) => `${k}: ${String(v).replace(/<br>/g, " | ").replace(/<[^>]+>/g, "")}`).join("\n")
     + `\nUA: ${navigator.userAgent}`;
-}
-
-/* ---------- 模擬器（只在最外層頁面顯示）---------- */
-let currentPreset = null;
-function buildSimulator() {
-  if (EMBED) return;
-  const groups = {};
-  for (const [key, p] of Object.entries(PRESETS)) {
-    if (!groups[p.device]) {
-      const g = document.createElement("div");
-      g.className = "preset-group";
-      g.innerHTML = `<span>${p.device}</span><div class="presets"></div>`;
-      $("presets").append(g);
-      groups[p.device] = g.lastElementChild;
-    }
-    const b = document.createElement("button");
-    b.type = "button"; b.textContent = p.label; b.dataset.key = key; b.id = `preset-${key}`;
-    b.setAttribute("aria-pressed", "false");
-    b.onclick = () => showPreset(key);
-    groups[p.device].append(b);
-  }
-  $("presets").style.cssText = "display:grid;gap:12px";
-  showPreset("fold-inner");
-}
-
-function showPreset(key) {
-  currentPreset = key;
-  const p = PRESETS[key];
-  for (const b of $("presets").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.key === key));
-  const [sw, sh] = p.screen, [ww, wh] = p.win, [wx, wy] = p.winAt ?? [0, 0];
-  const stage = $("stage");
-  const scale = Math.min(1, stage.clientWidth / (sw + 6), 540 / (sh + 6));
-  const frame = document.createElement("div");
-  frame.className = "screen-box";
-  frame.style.cssText = `width:${sw + 6}px;height:${sh + 6}px;transform:scale(${scale});margin-bottom:${(sh + 6) * (scale - 1)}px;margin-right:${(sw + 6) * (scale - 1)}px`;
-  if (ww < sw || wh < sh) {
-    const other = document.createElement("div");
-    other.className = "other"; other.textContent = "其他 App";
-    frame.append(other);
-  }
-  const iframe = document.createElement("iframe");
-  iframe.title = `${p.device} ${p.label}`;
-  iframe.name = `sim:${key}`;
-  iframe.srcdoc = SOURCE;
-  iframe.style.cssText = `left:${wx}px;top:${wy}px;width:${ww}px;height:${wh}px`;
-  frame.append(iframe);
-  stage.replaceChildren(frame);
-}
-
-if (SIM) {
-  $("simBanner").hidden = false;
-  $("simBanner").textContent = `模擬：${PRESETS[SIM].device} ${PRESETS[SIM].label}`;
 }
 
 $("copyBtn").onclick = () => {
@@ -583,14 +473,8 @@ visualViewport?.addEventListener("resize", schedule);
 navigator.devicePosture?.addEventListener?.("change", schedule);
 for (const q of ["(horizontal-viewport-segments: 2)", "(vertical-viewport-segments: 2)", "(device-posture: folded)"])
   matchMedia(q).addEventListener?.("change", schedule);
-let stageW = 0;
-addEventListener("resize", () => {
-  const w = $("stage").clientWidth;
-  if (currentPreset && w !== stageW) { stageW = w; showPreset(currentPreset); }
-});
 
 render();
-buildSimulator();
 </script>
 </body>
 </html>
