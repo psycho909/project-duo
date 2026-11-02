@@ -300,7 +300,7 @@ pre { background: var(--bg); overflow-x: auto; margin: 12px 0 0; }
         <ul class="rules">
           <li><b>螢幕數</b>：<code>window.viewport.segments</code> 回報 2 個以上分區，就是跨摺痕（C 或 D）。目前只有支援 Viewport Segments API 的 Chromium 瀏覽器會回報，iOS Safari 不支援。</li>
           <li><b>內螢幕或外螢幕</b>：長邊除以短邊小於 1.5 且短邊至少 600px 是內螢幕；短邊小於 520px 是外螢幕或一般手機。</li>
-          <li><b>連續畫面或多工視窗</b>：視窗寬度不到螢幕的 90%，或高度不到 70%，當作單螢幕處理。</li>
+          <li><b>連續畫面或多工視窗</b>：視窗寬度不到螢幕的 80%，或高度不到 65%，當作單螢幕處理。</li>
           <li><b>版型</b>：最後由視窗寬度決定，小於 600px 單欄，600px 以上雙欄。</li>
         </ul>
         <details>
@@ -341,7 +341,7 @@ pre { background: var(--bg); overflow-x: auto; margin: 12px 0 0; }
   </section>
 
   <!-- 版本號：每次修改頁面時更新 data-version 與 data-date -->
-  <footer class="version" id="version" data-version="1.1.0" data-date="2026-11-02">版本 1.1.0（2026-11-02）</footer>
+  <footer class="version" id="version" data-version="1.1.1" data-date="2026-11-02">版本 1.1.1（2026-11-02）</footer>
 </main>
 
 <!-- 量測 100svh／lvh／dvh、安全區域與 1rem 用的隱形元素 -->
@@ -403,8 +403,9 @@ function readEnv() {
 
 function classify(env) {
   let sw = env.sw, sh = env.sh;
-  // iOS Safari 的 screen.width/height 不隨旋轉改變，方向不一致時對調
-  if ((env.w > env.h) !== (sw > sh) && Math.abs(sw - sh) > 40) [sw, sh] = [sh, sw];
+  // iOS Safari 的 screen.width/height 不隨旋轉改變，和螢幕方向不一致時對調
+  // （用螢幕方向而非視窗形狀判斷，分割視窗的形狀常和螢幕相反）
+  if (env.portrait !== (sh >= sw) && Math.abs(sw - sh) > 40) [sw, sh] = [sh, sw];
 
   const shortSide = Math.min(sw, sh), longSide = Math.max(sw, sh);
   const screenRatio = longSide / shortSide;
@@ -418,7 +419,8 @@ function classify(env) {
     shortSide < 520 ? "cover" :
     "tablet";
 
-  const multiWindow = env.coarse && (fillW < 0.9 || fillH < 0.7);
+  // 實測全螢幕最低佔寬 88%（橫向導覽列）、佔高 74%（網址列）；分割視窗寬 ≤ 50% 或高 ≤ 43%
+  const multiWindow = env.coarse && (fillW < 0.8 || fillH < 0.65);
 
   let state;
   if (screenCount >= 2) {
@@ -455,8 +457,9 @@ const CHECKLIST = [
   { name: "外螢幕・橫向",     match: r => r.state === "cover" && !r.portrait },
   { name: "內螢幕展開・直向", match: r => r.state === "inner-continuous" && r.portrait },
   { name: "內螢幕展開・橫向", match: r => r.state === "inner-continuous" && !r.portrait },
-  { name: "內螢幕分割視窗",   match: r => r.state === "inner-multi" && r.fillH >= 0.85 },
-  { name: "浮動／彈出視窗",   match: r => (r.state === "inner-multi" || r.state === "multi") && r.fillH < 0.85 },
+  // 分割視窗有一邊佔滿（上下分割佔滿寬、左右分割佔大部分高）；浮動視窗兩邊都沒佔滿
+  { name: "內螢幕分割視窗",   match: r => r.state === "inner-multi" && (r.fillW >= 0.95 || r.fillH >= 0.7) },
+  { name: "浮動／彈出視窗",   match: r => (r.state === "inner-multi" || r.state === "multi") && r.fillW < 0.95 && r.fillH < 0.7 },
   { name: "半摺上下（Flex）", match: r => r.state === "span-v" },
   { name: "跨摺痕左右",       match: r => r.state === "span-h" },
   { name: "打字時的可視高度", match: r => r.kbVisible != null },
