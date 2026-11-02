@@ -11,7 +11,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <style>
 /* Layout: first screen shows only width × height and screen count, set as large as the
-   window allows; everything else lives in one details section below. Both follow A–D layouts. */
+   window allows; everything else lives in one details section below, ordered the way a
+   designer works: measure every state → compare artboards → pick breakpoints → layout specs. */
 :root {
   --bg: #e6eaee;        /* anodized aluminium */
   --surface: #f6f8f9;
@@ -22,6 +23,7 @@
   --accent-soft: #d4e3f4;
   --hinge: #d99117;     /* fold / hinge amber */
   --ok: #1d7d4a;
+  --warn: #a35a00;
   --font-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
   --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
   --wdth: 100;
@@ -30,13 +32,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #141920; --surface: #1c232c; --ink: #e3e8ee; --muted: #93a1b1; --rule: #2e3844;
-    --accent: #79aef0; --accent-soft: #1f3550; --hinge: #f0b247; --ok: #55c58a;
+    --accent: #79aef0; --accent-soft: #1f3550; --hinge: #f0b247; --ok: #55c58a; --warn: #f0a650;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #141920; --surface: #1c232c; --ink: #e3e8ee; --muted: #93a1b1; --rule: #2e3844;
-  --accent: #79aef0; --accent-soft: #1f3550; --hinge: #f0b247; --ok: #55c58a;
+  --accent: #79aef0; --accent-soft: #1f3550; --hinge: #f0b247; --ok: #55c58a; --warn: #f0a650;
   color-scheme: dark;
 }
 
@@ -81,8 +83,8 @@ code, pre { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; fon
 [data-layout^="span"] .hero .hinge { display: block; background: repeating-linear-gradient(45deg, var(--hinge) 0 5px, transparent 5px 10px); }
 
 /* ---------- 下方：詳細資訊 ---------- */
-.details { background: var(--surface); border-top: 2px solid var(--rule); display: grid; gap: 36px; padding-block: 28px 48px; }
-.details > .col { min-width: 0; display: flex; flex-direction: column; gap: 36px; }
+.details { background: var(--surface); border-top: 2px solid var(--rule); display: grid; gap: 40px; padding-block: 28px 48px; }
+.details > .col { min-width: 0; display: flex; flex-direction: column; gap: 40px; }
 [data-layout="dual"] .details { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 40px; }
 [data-layout="span-h"] .details { grid-template-columns: var(--seg-a) var(--hinge-size) var(--seg-b); column-gap: 0; }
 [data-layout="span-h"] .details > .col:last-child { grid-column: 3; }
@@ -99,6 +101,7 @@ code, pre { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; fon
 .checklist li::before { content: ""; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--rule); flex: none; }
 .checklist li.done { color: var(--ink); }
 .checklist li.done::before { background: var(--ok); border-color: var(--ok); }
+.howto { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 13.5px; }
 
 /* 已記錄的狀態 */
 .records { display: grid; }
@@ -109,17 +112,30 @@ code, pre { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; fon
 .rec-size { font-family: var(--font-display); font-weight: 700; font-size: 20px; font-variant-numeric: tabular-nums; grid-row: span 2; text-align: right; }
 .rec-size small { display: block; font-family: var(--font-body); font-size: 11.5px; font-weight: 400; color: var(--muted); }
 .rec button { grid-row: span 2; padding: 4px 8px; font-size: 12px; }
+.kb-test { display: grid; gap: 6px; font-size: 13.5px; color: var(--muted); }
+.kb-test input { font: inherit; font-size: 16px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--rule); background: var(--bg); color: var(--ink); max-width: 320px; }
+
+/* 畫板總覽：所有狀態用同一比例並排 */
+.boards { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 18px 16px; }
+.board { margin: 0; display: grid; gap: 6px; justify-items: start; }
+.frame { position: relative; border: 2px solid var(--ink); border-radius: 6px; background: var(--bg); overflow: hidden; }
+.board.now .frame { border-color: var(--accent); background: var(--accent-soft); }
+.frame .fold { position: absolute; background: var(--hinge); }
+.board figcaption { display: grid; font-size: 12px; color: var(--muted); max-width: 140px; }
+.board figcaption b { font-family: var(--font-display); font-size: 14px; color: var(--ink); font-variant-numeric: tabular-nums; }
 
 /* 寬度刻度 */
-.ruler { position: relative; height: 74px; margin-inline: 4px 24px; border-bottom: 2px solid var(--ink); }
+.ruler { position: relative; height: 92px; margin-inline: 4px 24px; border-bottom: 2px solid var(--ink); }
 .ruler .tick { position: absolute; bottom: 0; width: 2px; height: 22px; background: var(--accent); }
-.ruler .tick span { position: absolute; left: 50%; transform: translateX(-50%); font: 700 12px/1 var(--font-display); color: var(--accent); white-space: nowrap; }
-.ruler .tick span { bottom: 26px; }
-.ruler .tick.alt span { bottom: 44px; }
+.ruler .tick span { position: absolute; left: 50%; transform: translateX(-50%); bottom: 26px; font: 700 12px/1 var(--font-display); color: var(--accent); white-space: nowrap; }
+.ruler .tick.r1 span { bottom: 44px; }   /* 相鄰寬度的標籤錯開三層，避免數字疊在一起 */
+.ruler .tick.r2 span { bottom: 62px; }
 .ruler .bp { position: absolute; top: 0; bottom: -8px; border-left: 2px dashed var(--hinge); }
 .ruler .bp span { position: absolute; bottom: -24px; left: 4px; font: 700 12px/1 var(--font-display); color: var(--hinge); white-space: nowrap; }
 .ruler-wrap { padding-bottom: 22px; }
-textarea.code { width: 100%; min-height: 220px; font: 12px/1.5 ui-monospace, Consolas, monospace; background: var(--bg); color: var(--ink); border: 1px solid var(--rule); border-radius: 8px; padding: 10px; resize: vertical; }
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; }
+.tabs button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+textarea.code { width: 100%; min-height: 240px; font: 12px/1.5 ui-monospace, Consolas, monospace; background: var(--bg); color: var(--ink); border: 1px solid var(--rule); border-radius: 8px; padding: 10px; resize: vertical; }
 .version { background: var(--surface); border-top: 1px solid var(--rule); color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; text-align: center; padding-block: 14px calc(14px + env(safe-area-inset-bottom, 0px)); }
 .probe { position: fixed; top: 0; left: 0; width: 0; visibility: hidden; pointer-events: none; }
 
@@ -146,10 +162,11 @@ textarea.code { width: 100%; min-height: 220px; font: 12px/1.5 ui-monospace, Con
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 td { padding: 7px 8px 7px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
-td:first-child { color: var(--muted); width: 48%; }
+td:first-child { color: var(--muted); width: 40%; }
 td:last-child { font-variant-numeric: tabular-nums; word-break: break-word; }
 .yes { color: var(--ok); font-weight: 700; }
 .no { color: var(--muted); }
+.warn { color: var(--warn); }
 .copy-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 13px; color: var(--muted); }
 #copyFallback { width: 100%; min-height: 140px; font: 12px/1.5 ui-monospace, Consolas, monospace; background: var(--bg); color: var(--ink); border: 1px solid var(--rule); border-radius: 8px; padding: 8px; }
 button {
@@ -163,7 +180,6 @@ ul.rules { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: 14
 details { border-top: 1px solid var(--rule); padding-top: 12px; }
 summary { cursor: pointer; font-weight: 700; }
 pre { background: var(--bg); overflow-x: auto; margin: 12px 0 0; }
-
 </style>
 
 <main>
@@ -182,14 +198,29 @@ pre { background: var(--bg); overflow-x: auto; margin: 12px 0 0; }
     </div>
   </section>
 
-  <!-- 下方：目前版型、完整數據與其他說明 -->
+  <!-- 下方：量測 → 畫板 → 斷點 → 版面規格，依設計師的工作順序排列 -->
   <section class="details">
     <div class="col">
       <section class="block" id="records">
         <h2>已量測的狀態</h2>
-        <p class="hint">在手機上每換一種狀態（摺起、展開、旋轉、分割視窗），停留約 1 秒就會自動記錄。紀錄存在這台手機的瀏覽器裡，重新整理也不會消失。</p>
+        <p class="hint">每換一種狀態（摺起、展開、旋轉、分割視窗），停留約 1 秒就會自動記錄。紀錄存在這個瀏覽器裡，重新整理也不會消失；Chrome 與 Samsung Internet 的紀錄分開保存。</p>
         <ul class="checklist" id="checklist"></ul>
+        <details>
+          <summary>怎麼切換到這些狀態</summary>
+          <ul class="howto">
+            <li><b>外螢幕直／橫</b>：摺起手機，用外螢幕開啟本頁。要量橫向，先在快速設定開啟「自動旋轉」。</li>
+            <li><b>內螢幕展開直／橫</b>：打開手機。若瀏覽器沒有接續到內螢幕，直接在內螢幕重新開啟本頁。</li>
+            <li><b>內螢幕分割視窗</b>：從側邊工作列把另一個 App 拖到畫面一側，左右各量一次，也可以拖動中間的分隔線量不同比例。</li>
+            <li><b>浮動／彈出視窗</b>：在最近使用的 App 畫面，點瀏覽器圖示選「以彈出式視窗開啟」。</li>
+            <li><b>半摺上下（Flex）</b>：內螢幕展開後，把手機摺到約 90 度，像筆電一樣橫放。</li>
+            <li><b>跨摺痕左右</b>：半摺後直放，像一本打開的書。</li>
+            <li>半摺時若螢幕數仍顯示 1，代表這個瀏覽器不支援 Viewport Segments，畫面會被當成一整片處理；iOS Safari 一律如此。</li>
+          </ul>
+        </details>
         <div class="records" id="recordList"></div>
+        <label class="kb-test">點下方輸入框叫出鍵盤，量出打字時剩下的可視高度（會記到目前狀態）
+          <input id="kbInput" type="text" inputmode="text" placeholder="點這裡叫出鍵盤" autocomplete="off">
+        </label>
         <div class="btn-row">
           <button id="recordBtn" type="button">記錄目前狀態</button>
           <button id="copyRecordsBtn" type="button">複製紀錄表</button>
@@ -198,13 +229,24 @@ pre { background: var(--bg); overflow-x: auto; margin: 12px 0 0; }
       </section>
 
       <section class="block">
-        <h2>建議斷點</h2>
-        <p class="hint">依已量測的寬度排序，相差 40px 以內的寬度併成一組，斷點取相鄰兩組的中點，讓每種狀態都離斷點有餘裕，不會因為瀏覽器工具列或捲軸的幾 px 差異跳版。</p>
-        <div class="ruler-wrap"><div class="ruler" id="ruler"></div></div>
-        <textarea class="code" id="cssOut" readonly aria-label="建議的 CSS 斷點"></textarea>
-        <div class="btn-row"><button id="copyCssBtn" type="button">複製 CSS</button></div>
+        <h2>畫板總覽</h2>
+        <p class="hint">所有狀態用同一比例並排，高度取網址列收起時的最大值。尺寸可直接在 Figma 建立對應的畫框。</p>
+        <div class="boards" id="boards"></div>
+        <div class="btn-row"><button id="copyBoardsBtn" type="button">複製畫板尺寸</button></div>
       </section>
 
+      <section class="block">
+        <h2>建議斷點</h2>
+        <p class="hint">相差 40px 以內的寬度併成一組，斷點取相鄰兩組的中點，讓每種狀態都離斷點有餘裕，不會因為工具列或捲軸的幾 px 差異跳版。</p>
+        <div class="ruler-wrap"><div class="ruler" id="ruler"></div></div>
+        <div class="tabs" id="formatTabs" role="group" aria-label="輸出格式"></div>
+        <textarea class="code" id="cssOut" readonly aria-label="建議的斷點程式碼"></textarea>
+        <p class="hint" id="remNote"></p>
+        <div class="btn-row"><button id="copyCssBtn" type="button">複製程式碼</button></div>
+      </section>
+    </div>
+
+    <div class="col">
       <section class="block">
         <h2>目前版型</h2>
         <div class="state-line">
@@ -212,7 +254,7 @@ pre { background: var(--bg); overflow-x: auto; margin: 12px 0 0; }
           <span class="state-name" id="stateName">偵測中</span>
           <span class="state-sub" id="stateSub"></span>
         </div>
-        <p class="frame-note" id="frameNote" hidden>這個頁面嵌在其他網頁的框架裡（例如 Claude 的 Artifact 檢視器），量到的是框架尺寸，且瀏覽器通常不會把摺痕分區回報給框架。要量實機的完整數值，請直接開啟頁面網址。</p>
+        <p class="frame-note" id="frameNote" hidden>這個頁面嵌在其他網頁的框架裡，量到的是框架尺寸，且瀏覽器通常不會把摺痕分區回報給框架。要量實機的完整數值，請直接開啟頁面網址。</p>
         <ol class="modes" id="modes">
           <li data-group="A">
             <svg viewBox="0 0 52 40" aria-hidden="true"><rect class="m-body" x="17" y="2" width="18" height="36" rx="4"/><rect class="m-fill" x="20" y="7" width="12" height="4" rx="1"/><rect class="m-fill" x="20" y="14" width="12" height="4" rx="1"/><rect class="m-fill" x="20" y="21" width="12" height="4" rx="1"/><rect class="m-fill" x="20" y="28" width="12" height="4" rx="1"/></svg>
@@ -222,7 +264,7 @@ pre { background: var(--bg); overflow-x: auto; margin: 12px 0 0; }
           <li data-group="B">
             <svg viewBox="0 0 52 40" aria-hidden="true"><rect class="m-body" x="2" y="4" width="48" height="32" rx="4"/><rect class="m-fill" x="6" y="8" width="15" height="24" rx="1.5"/><rect class="m-fill" x="24" y="8" width="22" height="11" rx="1.5"/><rect class="m-fill" x="24" y="21" width="22" height="11" rx="1.5"/></svg>
             <h3>B. 寬版連續畫面</h3>
-            <p>內螢幕展開且網頁佔滿整片。雙欄 list-detail，避免把按鈕或標題斷行放在 50% 寬的摺痕處。</p>
+            <p>內螢幕展開且網頁佔滿整片。雙欄 list-detail，避免把按鈕或標題斷行放在畫面中線的摺痕處。</p>
           </li>
           <li data-group="C">
             <svg viewBox="0 0 52 40" aria-hidden="true"><rect class="m-body" x="2" y="4" width="48" height="32" rx="4"/><rect class="m-fill" x="6" y="8" width="17" height="24" rx="1.5"/><rect class="m-fill" x="29" y="8" width="17" height="24" rx="1.5"/><line class="m-fold" x1="26" y1="4" x2="26" y2="36"/></svg>
@@ -235,6 +277,22 @@ pre { background: var(--bg); overflow-x: auto; margin: 12px 0 0; }
             <p>筆電／桌上模式。上半部放內容，下半部放操作。</p>
           </li>
         </ol>
+      </section>
+
+      <section class="block">
+        <h2>這個寬度的版面規格</h2>
+        <p class="hint">依 Material 3 視窗級距給的網格建議，以及用 16px 內文估算的每行字數。</p>
+        <div class="table-wrap"><table><tbody id="specs"></tbody></table></div>
+      </section>
+
+      <section class="block">
+        <h2>完整偵測數據</h2>
+        <div class="table-wrap"><table><tbody id="metrics"></tbody></table></div>
+        <div class="copy-row">
+          <button id="copyBtn" type="button">複製數據</button>
+          <span>在實機上複製後貼回來，用來校正判斷門檻。</span>
+        </div>
+        <textarea id="copyFallback" readonly hidden aria-label="複製用文字"></textarea>
       </section>
 
       <section class="block">
@@ -280,29 +338,18 @@ pre { background: var(--bg); overflow-x: auto; margin: 12px 0 0; }
         </details>
       </section>
     </div>
-
-    <div class="col">
-      <section class="block">
-        <h2>完整偵測數據</h2>
-        <div class="table-wrap"><table><tbody id="metrics"></tbody></table></div>
-        <div class="copy-row">
-          <button id="copyBtn" type="button">複製數據</button>
-          <span>在實機上複製後貼回來，用來校正判斷門檻。</span>
-        </div>
-        <textarea id="copyFallback" readonly hidden aria-label="偵測數據文字"></textarea>
-      </section>
-    </div>
   </section>
 
   <!-- 版本號：每次修改頁面時更新 data-version 與 data-date -->
-  <footer class="version" id="version" data-version="1.0.0" data-date="2026-11-02">版本 1.0.0（2026-11-02）</footer>
+  <footer class="version" id="version" data-version="1.1.0" data-date="2026-11-02">版本 1.1.0（2026-11-02）</footer>
 </main>
 
-<!-- 量測 100svh／lvh／dvh 與安全區域用的隱形元素 -->
+<!-- 量測 100svh／lvh／dvh、安全區域與 1rem 用的隱形元素 -->
 <div class="probe" aria-hidden="true">
   <div id="pSvh" style="height:100svh"></div>
   <div id="pLvh" style="height:100lvh"></div>
   <div id="pDvh" style="height:100dvh"></div>
+  <div id="pRem" style="height:1rem"></div>
   <div id="pSafe" style="padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)"></div>
 </div>
 
@@ -326,6 +373,15 @@ function readPosture() {
   return null;
 }
 
+// 只取主版本號，例如「Samsung Internet 27」「Chrome 141」
+function browserName(ua) {
+  const rules = [[/SamsungBrowser\/(\d+)/, "Samsung Internet"], [/EdgA?\/(\d+)/, "Edge"], [/CriOS\/(\d+)/, "Chrome iOS"],
+    [/(?:FxiOS|Firefox)\/(\d+)/, "Firefox"], [/Chrome\/(\d+)/, "Chrome"], [/Version\/(\d+).*Safari/, "Safari"]];
+  for (const [re, name] of rules) { const m = re.exec(ua); if (m) return `${name} ${m[1]}`; }
+  return "其他瀏覽器";
+}
+const BROWSER = browserName(navigator.userAgent);
+
 function readEnv() {
   return {
     w: innerWidth, h: innerHeight,
@@ -338,8 +394,10 @@ function readEnv() {
     // 直向／橫向以裝置方向為準；內螢幕分割時視窗可能比例相反
     portrait: screen.orientation?.type ? screen.orientation.type.startsWith("portrait") : innerHeight >= innerWidth,
     svh: $("pSvh").offsetHeight, lvh: $("pLvh").offsetHeight, dvh: $("pDvh").offsetHeight,
+    rem: parseFloat(getComputedStyle($("pRem")).height) || 16,
     safe: ["Top", "Right", "Bottom", "Left"].map(s => parseFloat(getComputedStyle($("pSafe"))["padding" + s]) || 0),
     scale: visualViewport?.scale ?? 1,
+    typing: document.activeElement?.id === "kbInput",
   };
 }
 
@@ -401,6 +459,7 @@ const CHECKLIST = [
   { name: "浮動／彈出視窗",   match: r => (r.state === "inner-multi" || r.state === "multi") && r.fillH < 0.85 },
   { name: "半摺上下（Flex）", match: r => r.state === "span-v" },
   { name: "跨摺痕左右",       match: r => r.state === "span-h" },
+  { name: "打字時的可視高度", match: r => r.kbVisible != null },
 ];
 
 // 常見框架的斷點，用來對照目前寬度落在哪一級
@@ -411,12 +470,30 @@ const FRAMEWORKS = [
 ];
 const tier = (list, w) => list.filter(([, min]) => w >= min).pop()[0];
 
+// Material 3 各級距的網格：欄數、邊距、欄距、建議窗格數
+function gridFor(w) {
+  const g = w < 600 ? { cls: "compact（< 600）", cols: 4, margin: 16, gutter: 16, panes: "1 個" }
+    : w < 840 ? { cls: "medium（600–839）", cols: 8, margin: 24, gutter: 24, panes: "1 個，list-detail 可用 2 個" }
+    : { cls: w < 1200 ? "expanded（840–1199）" : "large（≥ 1200）", cols: 12, margin: 24, gutter: 24, panes: "2 個" };
+  g.col = (w - g.margin * 2 - g.gutter * (g.cols - 1)) / g.cols;
+  return g;
+}
+
+function aspectLabel(w, h) {
+  const r = w / h;
+  const name = r < 0.6 ? "細長直向" : r < 0.8 ? "直向" : r <= 1.25 ? "近方形" : r <= 1.8 ? "橫向" : "寬扁橫向";
+  return `${r.toFixed(2)}（${name}）`;
+}
+
 const STORE_KEY = "fold-records-v1";
 const loadRecords = () => { try { return JSON.parse(localStorage.getItem(STORE_KEY)) ?? []; } catch { return []; } };
 const saveRecords = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(records)); } catch {} };
+const FORMAT_KEY = "fold-format-v1";
+let format = (() => { try { return localStorage.getItem(FORMAT_KEY) || "css"; } catch { return "css"; } })();
 let records = loadRecords();
 let current = null;   // 最近一次 render 的狀態，給「記錄目前狀態」用
 let deviceModel = "";
+let remPx = 16;
 
 const $ = id => document.getElementById(id);
 const yn = v => v ? `<span class="yes">是</span>` : `<span class="no">否</span>`;
@@ -430,6 +507,7 @@ function render() {
   const root = document.documentElement;
   root.dataset.layout = r.layout;
   root.dataset.state = r.state;
+  remPx = env.rem;
   // 視窗越寬，數字字寬越寬：320px → wdth 62，1000px → wdth 125
   root.style.setProperty("--wdth", Math.round(Math.min(125, Math.max(62, 62 + (env.w - 320) / 680 * 63))));
 
@@ -450,6 +528,7 @@ function render() {
   $("stateSub").textContent = meta.sub;
   $("frameNote").hidden = !FRAMED;
   for (const li of $("modes").children) li.setAttribute("aria-current", String(li.dataset.group === meta.group));
+  renderSpecs(env, r);
 
   const segText = env.segments.length
     ? env.segments.map((s, i) => `#${i}：${px(s.width, s.height)}，位置 (${Math.round(s.x)}, ${Math.round(s.y)})`).join("<br>")
@@ -463,7 +542,7 @@ function render() {
     ["screen.availWidth × availHeight", px(env.aw, env.ah)],
     ["實體像素（螢幕 × DPR）", px(r.sw * env.dpr, r.sh * env.dpr)],
     ["devicePixelRatio", env.dpr.toFixed(3)],
-    ["視窗尺寸級距", r.sizeClass],
+    ["視窗長寬比（寬／高）", aspectLabel(env.w, env.h)],
     ["螢幕長寬比（長邊／短邊）", r.screenRatio.toFixed(2)],
     ["螢幕類型推測", r.screenType],
     ["視窗佔螢幕（寬／高）", `${Math.round(r.fillW * 100)}%／${Math.round(r.fillH * 100)}%`],
@@ -476,8 +555,10 @@ function render() {
     ["嵌在框架內", yn(FRAMED)],
     ["100svh／100lvh／100dvh", `${env.svh}／${env.lvh}／${env.dvh} px`],
     ["安全區域 上／右／下／左", env.safe.map(Math.round).join("／") + " px"],
-    ["頁面縮放 visualViewport.scale", env.scale === 1 ? "1" : `<span class="no">${env.scale.toFixed(2)}（已縮放，數字不準，請雙指縮回原大小）</span>`],
+    ["1rem", env.rem === 16 ? "16px" : `<span class="warn">${env.rem}px（系統或瀏覽器字級被調整）</span>`],
+    ["頁面縮放 visualViewport.scale", env.scale === 1 ? "1" : `<span class="warn">${env.scale.toFixed(2)}（已縮放，數字不準，請雙指縮回原大小）</span>`],
     ["常見斷點對照", FRAMEWORKS.map(([n, list]) => `${n} ${tier(list, env.w)}`).join("、")],
+    ["瀏覽器", BROWSER],
     ["裝置型號", deviceModel || `<span class="no">未提供</span>`],
   ];
   $("metrics").innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
@@ -491,7 +572,35 @@ function render() {
   renderRecords();
 }
 
-/* ---------- 狀態紀錄與斷點建議 ---------- */
+// 目前寬度的網格、窗格、每行字數與摺痕避讓建議
+function renderSpecs(env, r) {
+  if (env.w <= 0 || env.h <= 0) { $("specs").innerHTML = `<tr><td>視窗</td><td>目前沒有寬高（分頁在背景），切回此頁後會更新</td></tr>`; return; }
+  const w = Math.round(env.w), g = gridFor(w);
+  const content = w - g.margin * 2;
+  const perPane = g.panes === "2 個" ? (content - g.gutter) / 2 : content;
+  const chars = Math.floor(perPane / 16);
+  const charNote = chars > 40 ? `<span class="warn">超過 40 字偏長，建議限制內容寬度（例如 max-width: 40em）或拆成雙欄</span>`
+    : chars < 15 ? `<span class="warn">少於 15 字偏短，避免在這個寬度放多欄文字</span>` : "閱讀長度適中";
+  let fold = "這個狀態沒有摺痕穿過畫面";
+  if (r.state === "inner-continuous") fold = `摺痕在畫面中線：直放約 x = ${Math.round(w / 2)}px，橫放約 y = ${Math.round(env.h / 2)}px。重要按鈕、標題斷行與影片中心避開這條線`;
+  else if (env.segments.length >= 2) {
+    const [a, b] = env.segments;
+    fold = r.state === "span-h" ? `轉軸區 x = ${Math.round(a.x + a.width)}–${Math.round(b.x)}px，兩側內容各自完整` : `轉軸區 y = ${Math.round(a.y + a.height)}–${Math.round(b.y)}px，上半內容、下半操作`;
+  }
+  const rows = [
+    ["視窗級距", g.cls],
+    ["建議網格", `${g.cols} 欄、邊距 ${g.margin}px、欄距 ${g.gutter}px，每欄約 ${Math.round(g.col)}px`],
+    ["建議窗格", g.panes],
+    ["16px 內文每行字數", `約 ${chars} 個中文字${g.panes === "2 個" ? "（每個窗格）" : ""}，${charNote}`],
+    ["視窗長寬比", aspectLabel(env.w, env.h)],
+    ["摺痕避讓", fold],
+    ["觸控目標", "至少 48 × 48 CSS px，相鄰目標間距 8px 以上"],
+    ["底部安全區域", `${Math.round(env.safe[2])}px，固定在底部的元件要加上 env(safe-area-inset-bottom)`],
+  ];
+  $("specs").innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
+}
+
+/* ---------- 狀態紀錄 ---------- */
 let recordTimer = 0;
 
 function snapshot(env, r) {
@@ -503,25 +612,30 @@ function snapshot(env, r) {
     w: Math.round(env.w), hMin: Math.round(env.h), hMax: Math.round(env.h),
     svh: env.svh, lvh: env.lvh, count: r.screenCount, segs,
     fillW: +r.fillW.toFixed(2), fillH: +r.fillH.toFixed(2), dpr: env.dpr,
-    screen: `${Math.round(r.sw)}×${Math.round(r.sh)}`,
+    screen: `${Math.round(r.sw)}×${Math.round(r.sh)}`, browser: BROWSER,
+    // 輸入框有焦點時記下鍵盤開著的可視高度；此時視窗高度可能被鍵盤壓縮，不納入一般高度
+    typing: env.typing, kbVisible: env.typing ? Math.round(env.vh) : null,
   };
 }
 
 // 同一狀態、同寬度視為同一筆；高度會因網址列收合而變，記錄最小～最大值
 function addRecord(snap) {
   const old = records.find(x => x.key === snap.key);
-  if (old) {
+  if (old && snap.typing) old.kbVisible = Math.min(old.kbVisible ?? Infinity, snap.kbVisible);
+  else if (old) {
     old.hMin = Math.min(old.hMin, snap.hMin); old.hMax = Math.max(old.hMax, snap.hMax);
     old.svh = snap.svh; old.lvh = snap.lvh;
-  } else records.push({ ...snap });
+  } else records.push({ ...snap, typing: undefined });
   saveRecords();
   renderRecords();
 }
 
+const hText = x => x.hMin === x.hMax ? x.hMin : `${x.hMin}–${x.hMax}`;
+
 function renderRecords() {
   records.sort((a, b) => a.w - b.w || a.hMin - b.hMin);
   const n = records.length;
-  $("recStatus").innerHTML = n ? `已記錄 <b>${n}</b> 種狀態，往下看建議斷點` : "換個方向或摺疊狀態，停留 1 秒就會記錄";
+  $("recStatus").innerHTML = n ? `已記錄 <b>${n}</b> 種狀態，往下看畫板與建議斷點` : "換個方向或摺疊狀態，停留 1 秒就會記錄";
 
   $("checklist").innerHTML = CHECKLIST
     .map(c => `<li class="${records.some(c.match) ? "done" : ""}">${c.name}</li>`).join("");
@@ -529,16 +643,43 @@ function renderRecords() {
   $("recordList").innerHTML = n ? records.map((x, i) => `
     <div class="rec${current && x.key === current.key ? " now" : ""}">
       <span class="rec-name">${x.group}．${x.label}</span>
-      <span class="rec-size">${x.w}<small>高 ${x.hMin === x.hMax ? x.hMin : `${x.hMin}–${x.hMax}`}</small></span>
+      <span class="rec-size">${x.w}<small>高 ${hText(x)}</small></span>
       <button type="button" data-del="${i}" aria-label="刪除 ${x.label}">刪除</button>
-      <span class="rec-meta">螢幕 ${x.count}${x.segs.length ? `（${x.segs.join("＋")}）` : ""}．svh ${x.svh}／lvh ${x.lvh}．佔螢幕寬 ${Math.round(x.fillW * 100)}%</span>
+      <span class="rec-meta">螢幕 ${x.count}${x.segs.length ? `（${x.segs.join("＋")}）` : ""}．長寬比 ${(x.w / x.hMax).toFixed(2)}．svh ${x.svh}／lvh ${x.lvh}${x.kbVisible != null ? `．打字時可視高 ${x.kbVisible}` : ""}．${x.browser ?? ""}</span>
     </div>`).join("") : `<p class="hint">還沒有紀錄。在摺疊機上照上面的清單一一切換狀態。</p>`;
 
-  const { groups, bps, css } = suggest(records);
-  drawRuler(groups, bps);
-  $("cssOut").value = css;
+  drawBoards();
+  const model = suggest(records);
+  drawRuler(model);
+  renderFormatTabs();
+  $("cssOut").value = formatOutput(model, format);
+  $("remNote").textContent = remPx === 16 ? "" : `這個瀏覽器的 1rem = ${remPx}px（字級被調大或調小）。用 em 單位的斷點會跟著使用者字級縮放，px 斷點不會。`;
 }
 
+/* ---------- 畫板總覽 ---------- */
+function drawBoards() {
+  if (!records.length) { $("boards").innerHTML = `<p class="hint">量測後這裡會出現各狀態的畫板。</p>`; return; }
+  const maxDim = Math.max(...records.map(x => Math.max(x.w, x.hMax)));
+  const s = 150 / maxDim;
+  $("boards").innerHTML = records.map(x => {
+    const W = Math.round(x.w * s), H = Math.round(x.hMax * s);
+    let fold = "";
+    const seg0 = x.segs[0]?.split("×").map(Number);
+    if (x.state === "span-h" && seg0) fold = `<span class="fold" style="left:${Math.round(seg0[0] * s)}px;top:0;bottom:0;width:3px"></span>`;
+    if (x.state === "span-v" && seg0) fold = `<span class="fold" style="top:${Math.round(seg0[1] * s)}px;left:0;right:0;height:3px"></span>`;
+    return `<figure class="board${current && x.key === current.key ? " now" : ""}">
+      <div class="frame" style="width:${W}px;height:${H}px">${fold}</div>
+      <figcaption><b>${x.w} × ${x.hMax}</b>${x.label}</figcaption>
+    </figure>`;
+  }).join("");
+}
+
+function boardsText() {
+  return [`Figma 畫板尺寸（${deviceModel || "未提供型號"}，${BROWSER}）`,
+    ...records.map(x => `${x.label}：${x.w} × ${x.hMax}${x.hMin !== x.hMax ? `（網址列展開時高 ${x.hMin}）` : ""}${x.segs.length ? `，分區 ${x.segs.join(" + ")}` : ""}`)].join("\n");
+}
+
+/* ---------- 斷點建議 ---------- */
 // 寬度相差 40px 以內視為同一組（例如 373／400／412 都是手機寬，不值得各設斷點）；
 // 相鄰兩組之間取中點當 min-width 斷點
 const GROUP_GAP = 40;
@@ -549,53 +690,91 @@ function suggest(list) {
     if (g && x.w - g.max <= GROUP_GAP) { g.max = x.w; g.items.push(x); }
     else groups.push({ min: x.w, max: x.w, items: [x] });
   }
-  const bps = groups.slice(1).map((g, i) => Math.round((groups[i].max + g.min) / 2));
-  const names = g => [...new Set(g.items.map(x => `${x.label} ${x.w}`))].join("、");
-
-  if (!groups.length) return { groups, bps, css: "/* 還沒有量測紀錄。在摺疊機上切換各種狀態後，這裡會產生建議的 CSS 斷點。 */" };
-
-  const lines = [
-    `/* 依實機量測產生${deviceModel ? `（${deviceModel}）` : ""}：${list.length} 種狀態，寬度 ${groups[0].min}–${groups.at(-1).max}px */`,
-    `/* 斷點取相鄰寬度的中點，mobile-first 寫法 */`,
-    ``,
-    `/* 基本樣式（< ${bps[0] ?? "∞"}px）：${names(groups[0])} */`,
-    `.layout { }`,
-  ];
-  groups.slice(1).forEach((g, i) => {
-    lines.push(``, `/* ${names(g)} */`, `@media (min-width: ${bps[i]}px) {`, `  .layout { }`, `}`);
-  });
+  const names = items => [...new Set(items.map(x => `${x.label} ${x.w}`))].join("、");
+  const bps = groups.slice(1).map((g, i) => ({ px: Math.round((groups[i].max + g.min) / 2), covers: names(g.items) }));
 
   // 橫向時高度特別矮的狀態（外螢幕橫向等）另外給高度斷點
-  const short = list.filter(x => !x.portrait && x.hMin < 560 && x.count === 1);
-  if (short.length) {
-    const maxH = Math.max(...short.map(x => x.hMax)) + 20;
-    lines.push(``, `/* 橫向矮螢幕：${[...new Set(short.map(x => `${x.label} 高 ${x.hMin}`))].join("、")} */`,
-      `@media (orientation: landscape) and (max-height: ${maxH}px) {`, `  .layout { }`, `}`);
-  }
-  if (list.some(x => x.state === "span-h")) lines.push(``, `/* 跨摺痕左右 */`,
-    `@media (horizontal-viewport-segments: 2) {`,
-    `  .layout { grid-template-columns: env(viewport-segment-width 0 0) calc(env(viewport-segment-left 1 0) - env(viewport-segment-right 0 0)) env(viewport-segment-width 1 0); }`, `}`);
-  if (list.some(x => x.state === "span-v")) lines.push(``, `/* 半摺上下 */`,
-    `@media (vertical-viewport-segments: 2) {`,
-    `  .layout { grid-template-rows: env(viewport-segment-height 0 0) calc(env(viewport-segment-top 0 1) - env(viewport-segment-bottom 0 0)) env(viewport-segment-height 0 1); }`, `}`);
+  const shortItems = list.filter(x => !x.portrait && x.hMin < 560 && x.count === 1);
+  const short = shortItems.length ? { px: Math.max(...shortItems.map(x => x.hMax)) + 20,
+    covers: [...new Set(shortItems.map(x => `${x.label} 高 ${x.hMin}`))].join("、") } : null;
+  // 寬度 ≥ 600 且接近正方形的狀態（內螢幕展開），寬度斷點分不出直橫，改用長寬比
+  const squareItems = list.filter(x => x.w >= 600 && x.count === 1 && x.w / x.hMax >= 0.8 && x.w / x.hMax <= 1.25);
+  const square = squareItems.length ? { minW: Math.min(...squareItems.map(x => x.w)) - 20, covers: names(squareItems) } : null;
 
-  return { groups, bps, css: lines.join("\n") };
+  return { list, groups, bps, base: groups.length ? names(groups[0].items) : "", short, square,
+    spanH: list.some(x => x.state === "span-h"), spanV: list.some(x => x.state === "span-v") };
 }
 
-function drawRuler(groups, bps) {
+function drawRuler({ groups, bps }) {
   const ruler = $("ruler");
   if (!groups.length) { ruler.innerHTML = ""; return; }
   const max = Math.max(1000, groups.at(-1).max + 60), pct = v => (v / max * 100).toFixed(2) + "%";
   const widths = [...new Set(groups.flatMap(g => g.items.map(x => x.w)))];
   ruler.innerHTML =
-    widths.map((w, i) => `<div class="tick${i % 2 ? " alt" : ""}" style="left:${pct(w)}"><span>${w}</span></div>`).join("") +
-    bps.map(b => `<div class="bp" style="left:${pct(b)}"><span>${b}</span></div>`).join("");
+    widths.map((w, i) => `<div class="tick r${i % 3}" style="left:${pct(w)}"><span>${w}</span></div>`).join("") +
+    bps.map(b => `<div class="bp" style="left:${pct(b.px)}"><span>${b.px}</span></div>`).join("");
+}
+
+const FORMATS = [["css", "CSS（px）"], ["em", "CSS（em）"], ["scss", "SCSS"], ["tailwind", "Tailwind"], ["json", "JSON token"]];
+const SPAN_H = "(horizontal-viewport-segments: 2)", SPAN_V = "(vertical-viewport-segments: 2)";
+const SQUARE = minW => `(min-width: ${minW}px) and (min-aspect-ratio: 4/5) and (max-aspect-ratio: 5/4)`;
+
+function renderFormatTabs() {
+  $("formatTabs").innerHTML = FORMATS.map(([k, label]) =>
+    `<button type="button" data-format="${k}" aria-pressed="${k === format}">${label}</button>`).join("");
+}
+
+function formatOutput(m, fmt) {
+  if (!m.groups.length) return "/* 還沒有量測紀錄。在摺疊機上切換各種狀態後，這裡會產生建議的斷點。 */";
+  const head = `依實機量測產生${deviceModel ? `（${deviceModel}，${BROWSER}）` : `（${BROWSER}）`}：${m.list.length} 種狀態，寬度 ${m.groups[0].min}–${m.groups.at(-1).max}px`;
+  const em = v => `${+(v / 16).toFixed(3)}em`;   // 媒體查詢的 em 一律以瀏覽器預設 16px 計
+
+  if (fmt === "scss") return [
+    `// ${head}`, `// 基本樣式（mobile-first）：${m.base}`,
+    `$breakpoints: (`, ...m.bps.map((b, i) => `  "bp${i + 1}": ${b.px}px,  // ${b.covers}`), `);`, ``,
+    `@mixin bp($name) {`, `  @media (min-width: map-get($breakpoints, $name)) { @content; }`, `}`,
+    ...(m.short ? [``, `// ${m.short.covers}`, `@mixin short-landscape {`, `  @media (orientation: landscape) and (max-height: ${m.short.px}px) { @content; }`, `}`] : []),
+    ...(m.square ? [``, `// 近方形：${m.square.covers}`, `@mixin near-square {`, `  @media ${SQUARE(m.square.minW)} { @content; }`, `}`] : []),
+    ...(m.spanH ? [``, `@mixin fold-split-h { @media ${SPAN_H} { @content; } }`] : []),
+    ...(m.spanV ? [``, `@mixin fold-split-v { @media ${SPAN_V} { @content; } }`] : []),
+  ].join("\n");
+
+  if (fmt === "tailwind") return [
+    `// ${head}`, `// tailwind.config.js：基本樣式（無前綴）對應 ${m.base}`,
+    `module.exports = {`, `  theme: {`, `    extend: {`, `      screens: {`,
+    ...m.bps.map((b, i) => `        "bp${i + 1}": "${b.px}px",  // ${b.covers}`),
+    ...(m.short ? [`        "short": { raw: "(orientation: landscape) and (max-height: ${m.short.px}px)" },  // ${m.short.covers}`] : []),
+    ...(m.square ? [`        "square": { raw: "${SQUARE(m.square.minW)}" },  // ${m.square.covers}`] : []),
+    ...(m.spanH ? [`        "fold-h": { raw: "${SPAN_H}" },`] : []),
+    ...(m.spanV ? [`        "fold-v": { raw: "${SPAN_V}" },`] : []),
+    `      },`, `    },`, `  },`, `};`,
+  ].join("\n");
+
+  if (fmt === "json") return JSON.stringify({
+    $description: head,
+    breakpoint: Object.fromEntries(m.bps.map((b, i) => [`bp${i + 1}`, { $value: `${b.px}px`, $description: b.covers }])),
+    ...(m.short ? { shortLandscapeMaxHeight: { $value: `${m.short.px}px`, $description: m.short.covers } } : {}),
+    measured: m.list.map(x => ({ state: x.label, width: x.w, height: x.hMax, heightWithToolbar: x.hMin, screens: x.count })),
+  }, null, 2);
+
+  // CSS（px 或 em）
+  const u = v => fmt === "em" ? em(v) : `${v}px`;
+  const lines = [`/* ${head} */`, `/* 斷點取相鄰寬度的中點，mobile-first 寫法${fmt === "em" ? "；em 以 16px 換算，會跟著使用者字級縮放" : ""} */`, ``,
+    `/* 基本樣式${m.bps[0] ? `（< ${u(m.bps[0].px)}）` : ""}：${m.base} */`, `.layout { }`];
+  for (const b of m.bps) lines.push(``, `/* ${b.covers} */`, `@media (min-width: ${u(b.px)}) {`, `  .layout { }`, `}`);
+  if (m.short) lines.push(``, `/* 橫向矮螢幕：${m.short.covers} */`, `@media (orientation: landscape) and (max-height: ${u(m.short.px)}) {`, `  .layout { }`, `}`);
+  if (m.square) lines.push(``, `/* 近方形，寬度分不出直橫時用長寬比：${m.square.covers} */`, `@media ${SQUARE(m.square.minW).replace(`${m.square.minW}px`, u(m.square.minW))} {`, `  .layout { }`, `}`);
+  if (m.spanH) lines.push(``, `/* 跨摺痕左右 */`, `@media ${SPAN_H} {`,
+    `  .layout { grid-template-columns: env(viewport-segment-width 0 0) calc(env(viewport-segment-left 1 0) - env(viewport-segment-right 0 0)) env(viewport-segment-width 1 0); }`, `}`);
+  if (m.spanV) lines.push(``, `/* 半摺上下 */`, `@media ${SPAN_V} {`,
+    `  .layout { grid-template-rows: env(viewport-segment-height 0 0) calc(env(viewport-segment-top 0 1) - env(viewport-segment-bottom 0 0)) env(viewport-segment-height 0 1); }`, `}`);
+  return lines.join("\n");
 }
 
 function recordsText() {
-  const head = ["狀態", "寬", "高", "螢幕數", "分區", "svh", "lvh", "佔螢幕寬", "DPR", "螢幕"];
-  const rows = records.map(x => [x.label, x.w, x.hMin === x.hMax ? x.hMin : `${x.hMin}-${x.hMax}`, x.count,
-    x.segs.join("+") || "-", x.svh, x.lvh, `${Math.round(x.fillW * 100)}%`, x.dpr, x.screen]);
+  const head = ["狀態", "寬", "高", "長寬比", "螢幕數", "分區", "svh", "lvh", "打字時可視高", "佔螢幕寬", "DPR", "螢幕", "瀏覽器"];
+  const rows = records.map(x => [x.label, x.w, hText(x), (x.w / x.hMax).toFixed(2), x.count, x.segs.join("+") || "-",
+    x.svh, x.lvh, x.kbVisible ?? "-", `${Math.round(x.fillW * 100)}%`, x.dpr, x.screen, x.browser ?? "-"]);
   return [`頁面版本：${$("version").dataset.version}`, `裝置：${deviceModel || "未提供"}`, `UA：${navigator.userAgent}`, "", head.join("\t"), ...rows.map(r => r.join("\t"))].join("\n");
 }
 
@@ -607,7 +786,15 @@ function copyText(btn, text, label) {
 
 $("recordBtn").onclick = () => current && addRecord(current);
 $("copyRecordsBtn").onclick = e => copyText(e.currentTarget, recordsText(), "複製紀錄表");
-$("copyCssBtn").onclick = e => copyText(e.currentTarget, $("cssOut").value, "複製 CSS");
+$("copyBoardsBtn").onclick = e => copyText(e.currentTarget, boardsText(), "複製畫板尺寸");
+$("copyCssBtn").onclick = e => copyText(e.currentTarget, $("cssOut").value, "複製程式碼");
+$("formatTabs").onclick = e => {
+  const k = e.target.dataset?.format;
+  if (!k) return;
+  format = k;
+  try { localStorage.setItem(FORMAT_KEY, k); } catch {}
+  renderRecords();
+};
 $("clearBtn").onclick = e => {
   // 兩段式確認，避免誤刪
   const b = e.currentTarget;
@@ -618,6 +805,9 @@ $("recordList").onclick = e => {
   const i = e.target.dataset?.del;
   if (i != null) { records.splice(+i, 1); saveRecords(); renderRecords(); }
 };
+// 鍵盤開關不一定觸發 window resize，焦點變化時也重新量測
+$("kbInput").addEventListener("focus", () => schedule());
+$("kbInput").addEventListener("blur", () => schedule());
 
 // Chrome（Android）可取得型號，例如 SM-F9xx；其他瀏覽器從 UA 推測
 navigator.userAgentData?.getHighEntropyValues?.(["model"]).then(v => { deviceModel = v.model || ""; schedule(); }).catch(() => {});
