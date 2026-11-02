@@ -283,7 +283,7 @@ pre { background: var(--bg); overflow-x: auto; margin: 12px 0 0; }
 
       <section class="block">
         <h2>公司 RWD 臨時規範</h2>
-        <p class="hint">≤ 480、481–768 用 vw 等比縮放，769 以上用 px。畫板寬、倍率上限與矮畫面規則是依實測補上的建議值，見 docs/rwd-temp-spec-review.md。</p>
+        <p class="hint">≤ 480、481–768、769–1920 都用 vw 等比縮放（769 以上用 PC 1920 稿）。畫板寬、倍率上限與矮畫面規則是依實測補上的建議值，見 docs/rwd-temp-spec-review.md。</p>
         <div class="table-wrap"><table><tbody id="rwd"></tbody></table></div>
         <details>
           <summary>已知裝置落在哪一級</summary>
@@ -353,7 +353,7 @@ pre { background: var(--bg); overflow-x: auto; margin: 12px 0 0; }
   </section>
 
   <!-- 版本號：每次修改頁面時更新 data-version 與 data-date -->
-  <footer class="version" id="version" data-version="1.2.1" data-date="2026-11-02">版本 1.2.1（2026-11-02）</footer>
+  <footer class="version" id="version" data-version="1.3.0" data-date="2026-11-02">版本 1.3.0（2026-11-02）</footer>
 </main>
 
 <!-- 量測 100svh／lvh／dvh、安全區域與 1rem 用的隱形元素 -->
@@ -498,14 +498,17 @@ function gridFor(w) {
 const RWD = [
   { id: "A", range: "≤ 480", test: w => w <= 480, base: 375, max: 440, use: "手機、外螢幕、分割視窗" },
   { id: "B", range: "481–768", test: w => w <= 768, base: 720, max: 768, use: "內螢幕直向、iPhone Duo 內螢幕" },
-  { id: "C", range: "≥ 769", test: () => true, base: 1200, max: 1200, use: "桌機、內螢幕橫向", px: true },
+  { id: "C", range: "769–1920", test: () => true, base: 1920, max: 1920, use: "桌機、內螢幕橫向" },
 ];
 const SHORT_H = 460;
+// 769–1279 用 PC 稿會縮到一半以下，建議改沿用 B 版（720 畫板，上限 1.2 倍）
+const B_WIDE = { base: 720, max: 864 };
 const rwdFor = (w, h) => {
   const short = w > h && h <= SHORT_H;
   const t = RWD.find(x => x.test(w));
-  const scale = short || t.px ? 1 : Math.min(w, t.max) / t.base;
-  return { t, short, scale, raw: w / t.base };
+  const scale = short ? 1 : Math.min(w, t.max) / t.base;
+  const alt = !short && t.id === "C" && w < 1280 ? Math.min(w, B_WIDE.max) / B_WIDE.base : null;
+  return { t, short, scale, raw: w / t.base, alt };
 };
 // 實測（LambdaTest）的尺寸，高度為 100svh；iPhone Duo 與 Pro Max 為整片螢幕的 point（見 docs/iphone-duo-specs.md）
 const KNOWN = [
@@ -517,8 +520,10 @@ const KNOWN = [
   ["Fold8 Ultra 內螢幕・橫", 834, 578], ["Fold8 Ultra 內橫・上下分割", 834, 223], ["Fold8 內螢幕・橫", 932, 520],
   ["iPhone Duo 內螢幕・橫（模擬器）", 951, 669],
 ];
-const rwdLabel = ({ t, short, scale, raw }) =>
-  short ? `矮畫面 → A 版，1 倍` : t.px ? `${t.id}，px` : `${t.id}，${scale.toFixed(2)} 倍${raw > scale + 0.005 ? `（原 ${raw.toFixed(2)}，已封頂）` : ""}`;
+const rwdLabel = ({ t, short, scale, raw, alt }) =>
+  short ? `矮畫面 → A 版，1 倍`
+  : alt ? `${t.id}，<span class="warn">${scale.toFixed(2)} 倍</span>（建議改 B 版 ${alt.toFixed(2)} 倍）`
+  : `${t.id}，${scale.toFixed(2)} 倍${raw > scale + 0.005 ? `（原 ${raw.toFixed(2)}，已封頂）` : ""}`;
 
 function renderRwd(env) {
   const w = Math.round(env.w), h = Math.round(env.h);
@@ -529,18 +534,21 @@ function renderRwd(env) {
     return `<tr aria-current="${same}"><td>${n}</td><td>${kw} × ${kh}</td><td>${rwdLabel(k)}</td></tr>`;
   }).join("");
   if (w <= 0 || h <= 0) { $("rwd").innerHTML = `<tr><td>級距</td><td>目前沒有寬高（分頁在背景），切回此頁後會更新</td></tr>`; return; }
+  const pc = t.id === "C";
   const scaleNote = cur.short ? "不放大，沿用 A 版、內容最寬 375px 置中"
-    : t.px ? `px 排版，${w < 1200 ? `769–1199 用流動寬度（目前 ${w}px），不要固定 1200` : "內容最寬 1200px 置中"}`
-    : `${cur.scale.toFixed(2)} 倍${cur.raw > cur.scale + 0.005 ? `<span class="warn">（純 vw 會是 ${cur.raw.toFixed(2)} 倍，已在 ${t.max}px 封頂並置中）</span>` : ""}`;
-  const unit = cur.short || t.px ? 1 : cur.scale;
+    : `${cur.scale.toFixed(2)} 倍${cur.raw > cur.scale + 0.005 ? `<span class="warn">（純 vw 會是 ${cur.raw.toFixed(2)} 倍，已在 ${t.max}px 封頂並置中）</span>` : ""}`
+      + (cur.alt ? `<br><span class="warn">PC 稿在這個寬度縮到一半左右。建議 769–1279 改沿用 B 版（720 畫板，上限 1.2 倍）：${cur.alt.toFixed(2)} 倍</span>` : "");
+  const unit = cur.short ? 1 : cur.scale;
   const vw = n => `${(n / t.base * 100).toFixed(3)}vw`;
+  const px16 = 16 * unit, btn = 48 * unit;
   const rows = [
     ["級距", `${cur.short ? `<span class="warn">矮畫面（高 ${h} ≤ ${SHORT_H}）</span>，寬度原屬 ${t.id}` : `${t.id}（${t.range}）`}：${cur.short ? "外螢幕橫向、上下分割" : t.use}`],
-    ["設計畫板", cur.short ? "A 版 375 寬" : t.px ? "PC 稿 1920 寬、內容 1200" : `${t.base} 寬（2 倍稿 ${t.base * 2}）`],
+    ["設計畫板", cur.short ? "A 版 375 寬" : pc ? "PC 稿 1920 寬（內文至少 18px）" : `${t.base} 寬（2 倍稿 ${t.base * 2}）`],
     ["縮放倍率", scaleNote],
-    ["設計稿 16px", cur.short || t.px ? `16px` : `${vw(16)}，實際 ${(16 * unit).toFixed(1)}px${16 * unit < 15 ? `<span class="warn">，偏小，字級用 max(1rem, …) 保底</span>` : ""}`],
+    ["設計稿 16px", cur.short ? `16px` : `${vw(16)}，實際 ${px16.toFixed(1)}px${px16 < 12 ? `<span class="warn">，低於 12px 無法閱讀</span>` : px16 < 15 ? `<span class="warn">，偏小，字級用 max(1rem, …) 保底</span>` : ""}`],
+    ["設計稿 48px 按鈕", cur.short ? "48px" : `實際 ${Math.round(btn)}px${btn < 44 && env.coarse ? `<span class="warn">，低於觸控建議的 44–48px</span>` : ""}`],
     ["KV 安全區", `中央 ${Math.round(w * 0.6)} × ${Math.round(h * 0.6)}px（60%）${t.id !== "A" && !cur.short ? `，並避開中線 x = ${Math.round(w / 2)}±24px 的摺痕` : ""}`],
-    ["圖片輸出", cur.short || t.id === "A" ? "375 × 3 = 1125 寬（KV 1320）" : t.px ? "1200 × 2 = 2400 寬" : `${t.base} × 3 = ${t.base * 3} 寬`],
+    ["圖片輸出", cur.short || t.id === "A" ? "375 × 3 = 1125 寬（KV 1320）" : pc ? "1920 寬（KV 可到 2880）" : `${t.base} × 3 = ${t.base * 3} 寬`],
     ["斷點寫法", "(width <= 480px)、(480px < width <= 768px)、(width > 768px)，避免小數寬度兩邊都不成立"],
   ];
   $("rwd").innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
