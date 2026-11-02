@@ -164,6 +164,8 @@ table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 td { padding: 7px 8px 7px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
 td:first-child { color: var(--muted); width: 40%; }
 td:last-child { font-variant-numeric: tabular-nums; word-break: break-word; }
+table.known td:first-child { width: auto; }
+table.known tr[aria-current="true"] td { color: var(--ink); font-weight: 700; }
 .yes { color: var(--ok); font-weight: 700; }
 .no { color: var(--muted); }
 .warn { color: var(--warn); }
@@ -280,6 +282,16 @@ pre { background: var(--bg); overflow-x: auto; margin: 12px 0 0; }
       </section>
 
       <section class="block">
+        <h2>公司 RWD 臨時規範</h2>
+        <p class="hint">≤ 480、481–768 用 vw 等比縮放，769 以上用 px。畫板寬、倍率上限與矮畫面規則是依實測補上的建議值，見 docs/rwd-temp-spec-review.md。</p>
+        <div class="table-wrap"><table><tbody id="rwd"></tbody></table></div>
+        <details>
+          <summary>已知裝置落在哪一級</summary>
+          <div class="table-wrap"><table class="known"><tbody id="rwdKnown"></tbody></table></div>
+        </details>
+      </section>
+
+      <section class="block">
         <h2>這個寬度的版面規格</h2>
         <p class="hint">依 Material 3 視窗級距給的網格建議，以及用 16px 內文估算的每行字數。</p>
         <div class="table-wrap"><table><tbody id="specs"></tbody></table></div>
@@ -341,7 +353,7 @@ pre { background: var(--bg); overflow-x: auto; margin: 12px 0 0; }
   </section>
 
   <!-- 版本號：每次修改頁面時更新 data-version 與 data-date -->
-  <footer class="version" id="version" data-version="1.1.1" data-date="2026-11-02">版本 1.1.1（2026-11-02）</footer>
+  <footer class="version" id="version" data-version="1.2.0" data-date="2026-11-02">版本 1.2.0（2026-11-02）</footer>
 </main>
 
 <!-- 量測 100svh／lvh／dvh、安全區域與 1rem 用的隱形元素 -->
@@ -482,6 +494,57 @@ function gridFor(w) {
   return g;
 }
 
+// 公司 RWD 臨時規範；畫板寬（base）、內容最寬（max）與矮畫面是依實測補上的建議值
+const RWD = [
+  { id: "A", range: "≤ 480", test: w => w <= 480, base: 375, max: 440, use: "手機、外螢幕、分割視窗" },
+  { id: "B", range: "481–768", test: w => w <= 768, base: 720, max: 768, use: "內螢幕直向、iPhone Duo 內螢幕" },
+  { id: "C", range: "≥ 769", test: () => true, base: 1200, max: 1200, use: "桌機、內螢幕橫向", px: true },
+];
+const SHORT_H = 460;
+const rwdFor = (w, h) => {
+  const short = w > h && h <= SHORT_H;
+  const t = RWD.find(x => x.test(w));
+  const scale = short || t.px ? 1 : Math.min(w, t.max) / t.base;
+  return { t, short, scale, raw: w / t.base };
+};
+// 實測（LambdaTest）與規範附錄的尺寸，高度為 100svh
+const KNOWN = [
+  ["Fold8 內直・左右分割", 349, 790], ["Fold8 Ultra 外螢幕・直", 360, 698], ["Fold8 Ultra 內直・左右分割", 373, 693],
+  ["Fold8 Ultra 內橫・左右分割", 414, 578], ["iPhone 18 Pro Max（附錄）", 440, 956], ["Fold8 內橫・左右分割", 463, 520],
+  ["iPhone Duo 外螢幕（附錄）", 466, 678], ["Fold8 外螢幕・直", 475, 605], ["iPhone Duo 內螢幕（附錄）", 626, 890],
+  ["Fold8 外螢幕・橫", 663, 389], ["Fold8 內螢幕・直", 704, 750], ["Fold8 內直・上下分割", 704, 304],
+  ["Fold8 Ultra 內螢幕・直", 752, 653], ["Fold8 Ultra 內直・上下分割", 752, 257], ["Fold8 Ultra 外螢幕・橫", 756, 274],
+  ["Fold8 Ultra 內螢幕・橫", 834, 578], ["Fold8 Ultra 內橫・上下分割", 834, 223], ["Fold8 內螢幕・橫", 932, 520],
+];
+const rwdLabel = ({ t, short, scale, raw }) =>
+  short ? `矮畫面 → A 版，1 倍` : t.px ? `${t.id}，px` : `${t.id}，${scale.toFixed(2)} 倍${raw > scale + 0.005 ? `（原 ${raw.toFixed(2)}，已封頂）` : ""}`;
+
+function renderRwd(env) {
+  const w = Math.round(env.w), h = Math.round(env.h);
+  const cur = rwdFor(w, h), { t } = cur;
+  $("rwdKnown").innerHTML = KNOWN.map(([n, kw, kh]) => {
+    const k = rwdFor(kw, kh);
+    const same = k.short === cur.short && (cur.short || k.t === t);
+    return `<tr aria-current="${same}"><td>${n}</td><td>${kw} × ${kh}</td><td>${rwdLabel(k)}</td></tr>`;
+  }).join("");
+  if (w <= 0 || h <= 0) { $("rwd").innerHTML = `<tr><td>級距</td><td>目前沒有寬高（分頁在背景），切回此頁後會更新</td></tr>`; return; }
+  const scaleNote = cur.short ? "不放大，沿用 A 版、內容最寬 375px 置中"
+    : t.px ? `px 排版，${w < 1200 ? `769–1199 用流動寬度（目前 ${w}px），不要固定 1200` : "內容最寬 1200px 置中"}`
+    : `${cur.scale.toFixed(2)} 倍${cur.raw > cur.scale + 0.005 ? `<span class="warn">（純 vw 會是 ${cur.raw.toFixed(2)} 倍，已在 ${t.max}px 封頂並置中）</span>` : ""}`;
+  const unit = cur.short || t.px ? 1 : cur.scale;
+  const vw = n => `${(n / t.base * 100).toFixed(3)}vw`;
+  const rows = [
+    ["級距", `${cur.short ? `<span class="warn">矮畫面（高 ${h} ≤ ${SHORT_H}）</span>，寬度原屬 ${t.id}` : `${t.id}（${t.range}）`}：${cur.short ? "外螢幕橫向、上下分割" : t.use}`],
+    ["設計畫板", cur.short ? "A 版 375 寬" : t.px ? "PC 稿 1920 寬、內容 1200" : `${t.base} 寬（2 倍稿 ${t.base * 2}）`],
+    ["縮放倍率", scaleNote],
+    ["設計稿 16px", cur.short || t.px ? `16px` : `${vw(16)}，實際 ${(16 * unit).toFixed(1)}px${16 * unit < 15 ? `<span class="warn">，偏小，字級用 max(1rem, …) 保底</span>` : ""}`],
+    ["KV 安全區", `中央 ${Math.round(w * 0.6)} × ${Math.round(h * 0.6)}px（60%）${t.id !== "A" && !cur.short ? `，並避開中線 x = ${Math.round(w / 2)}±24px 的摺痕` : ""}`],
+    ["圖片輸出", cur.short || t.id === "A" ? "375 × 3 = 1125 寬（KV 1320）" : t.px ? "1200 × 2 = 2400 寬" : `${t.base} × 3 = ${t.base * 3} 寬`],
+    ["斷點寫法", "(width <= 480px)、(480px < width <= 768px)、(width > 768px)，避免小數寬度兩邊都不成立"],
+  ];
+  $("rwd").innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
+}
+
 function aspectLabel(w, h) {
   const r = w / h;
   const name = r < 0.6 ? "細長直向" : r < 0.8 ? "直向" : r <= 1.25 ? "近方形" : r <= 1.8 ? "橫向" : "寬扁橫向";
@@ -532,6 +595,7 @@ function render() {
   $("frameNote").hidden = !FRAMED;
   for (const li of $("modes").children) li.setAttribute("aria-current", String(li.dataset.group === meta.group));
   renderSpecs(env, r);
+  renderRwd(env);
 
   const segText = env.segments.length
     ? env.segments.map((s, i) => `#${i}：${px(s.width, s.height)}，位置 (${Math.round(s.x)}, ${Math.round(s.y)})`).join("<br>")
