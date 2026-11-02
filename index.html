@@ -120,6 +120,7 @@ code, pre { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; fon
 .ruler .bp span { position: absolute; bottom: -24px; left: 4px; font: 700 12px/1 var(--font-display); color: var(--hinge); white-space: nowrap; }
 .ruler-wrap { padding-bottom: 22px; }
 textarea.code { width: 100%; min-height: 220px; font: 12px/1.5 ui-monospace, Consolas, monospace; background: var(--bg); color: var(--ink); border: 1px solid var(--rule); border-radius: 8px; padding: 10px; resize: vertical; }
+.version { background: var(--surface); border-top: 1px solid var(--rule); color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; text-align: center; padding-block: 14px calc(14px + env(safe-area-inset-bottom, 0px)); }
 .probe { position: fixed; top: 0; left: 0; width: 0; visibility: hidden; pointer-events: none; }
 
 .state-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
@@ -292,6 +293,9 @@ pre { background: var(--bg); overflow-x: auto; margin: 12px 0 0; }
       </section>
     </div>
   </section>
+
+  <!-- 版本號：每次修改頁面時更新 data-version 與 data-date -->
+  <footer class="version" id="version" data-version="1.0.0" data-date="2026-11-02">版本 1.0.0（2026-11-02）</footer>
 </main>
 
 <!-- 量測 100svh／lvh／dvh 與安全區域用的隱形元素 -->
@@ -478,7 +482,7 @@ function render() {
   ];
   $("metrics").innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
   lastReport = rows.map(([k, v]) => `${k}: ${String(v).replace(/<br>/g, " | ").replace(/<[^>]+>/g, "")}`).join("\n")
-    + `\nUA: ${navigator.userAgent}`;
+    + `\n頁面版本: ${$("version").dataset.version}\nUA: ${navigator.userAgent}`;
 
   current = snapshot(env, r);
   // 手機上停留 1 秒才自動記錄，避開摺疊、旋轉過程中的過渡尺寸
@@ -592,7 +596,7 @@ function recordsText() {
   const head = ["狀態", "寬", "高", "螢幕數", "分區", "svh", "lvh", "佔螢幕寬", "DPR", "螢幕"];
   const rows = records.map(x => [x.label, x.w, x.hMin === x.hMax ? x.hMin : `${x.hMin}-${x.hMax}`, x.count,
     x.segs.join("+") || "-", x.svh, x.lvh, `${Math.round(x.fillW * 100)}%`, x.dpr, x.screen]);
-  return [`裝置：${deviceModel || "未提供"}`, `UA：${navigator.userAgent}`, "", head.join("\t"), ...rows.map(r => r.join("\t"))].join("\n");
+  return [`頁面版本：${$("version").dataset.version}`, `裝置：${deviceModel || "未提供"}`, `UA：${navigator.userAgent}`, "", head.join("\t"), ...rows.map(r => r.join("\t"))].join("\n");
 }
 
 function copyText(btn, text, label) {
