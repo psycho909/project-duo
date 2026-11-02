@@ -3,18 +3,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <style>
-/* Layout: the fold is the motif. A live readout whose letter width tracks window width,
-   a to-scale drawing of screen / window / hinge, then panes that re-flow to A–D layouts. */
+/* Layout: first screen shows only width × height and screen count, set as large as the
+   window allows; everything else lives in one details section below. Both follow A–D layouts. */
 :root {
   --bg: #e6eaee;        /* anodized aluminium */
   --surface: #f6f8f9;
   --ink: #18212c;
   --muted: #5a6776;
   --rule: #c9d1d9;
-  --accent: #1d5fa8;    /* active window */
+  --accent: #1d5fa8;
   --accent-soft: #d4e3f4;
   --hinge: #d99117;     /* fold / hinge amber */
-  --hatch: #b3bdc8;
   --ok: #1d7d4a;
   --font-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
   --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
@@ -24,93 +23,85 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #141920; --surface: #1c232c; --ink: #e3e8ee; --muted: #93a1b1; --rule: #2e3844;
-    --accent: #79aef0; --accent-soft: #1f3550; --hinge: #f0b247; --hatch: #3a4654; --ok: #55c58a;
+    --accent: #79aef0; --accent-soft: #1f3550; --hinge: #f0b247; --ok: #55c58a;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #141920; --surface: #1c232c; --ink: #e3e8ee; --muted: #93a1b1; --rule: #2e3844;
-  --accent: #79aef0; --accent-soft: #1f3550; --hinge: #f0b247; --hatch: #3a4654; --ok: #55c58a;
+  --accent: #79aef0; --accent-soft: #1f3550; --hinge: #f0b247; --ok: #55c58a;
   color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
 :root { padding: 0 !important; }
 html, body { margin: 0; padding: 0; }
-body {
-  background: var(--bg); color: var(--ink);
-  font: 15px/1.65 var(--font-body);
-}
-h1, h2, h3 { text-wrap: balance; margin: 0; }
+html { overflow-x: clip; }  /* 分區欄寬是固定 px，桌機捲軸佔掉的寬度不該造成橫向捲動 */
+body { background: var(--bg); color: var(--ink); font: 15px/1.65 var(--font-body); }
+h2, h3 { text-wrap: balance; margin: 0; }
 h2 { font-size: 16px; font-weight: 700; }
 p { margin: 0; }
 code, pre { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12.5px; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* ---------- 版型骨架：JS 設定 html[data-layout] ---------- */
-.app {
-  /* 不留外距：版面直接貼齊裝置螢幕，跨摺痕時才能和實體分區精準對齊 */
-  display: grid; gap: 28px; width: 100%; margin: 0; padding: 0;
-}
-.pane { min-width: 0; display: flex; flex-direction: column; gap: 28px; }
-.hinge { display: none; }
+/* ---------- 第一屏：寬／高與螢幕數 ---------- */
+.hero { display: grid; min-height: 100svh; }
+.hero > div { container-type: inline-size; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.hero .hinge { display: none; }
+.label { color: var(--muted); font-size: 14px; }
 
-[data-layout="single"] .app { grid-template-columns: minmax(0, 1fr); }
-[data-layout="dual"] .app { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: start; gap: 28px 40px; }
-[data-layout="dual"] .pane-a { position: sticky; top: 0; }
-
-[data-layout="span-h"] .app,
-[data-layout="span-v"] .app { height: 100dvh; padding: 0; gap: 0; max-width: none; }
-[data-layout="span-h"] .app { grid-template-columns: var(--seg-a) var(--hinge-size) var(--seg-b); }
-[data-layout="span-v"] .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: var(--seg-a) var(--hinge-size) var(--seg-b); }
-[data-layout^="span"] .pane { overflow: auto; }
-[data-layout^="span"] .hinge { display: block; background: repeating-linear-gradient(45deg, var(--hinge) 0 5px, transparent 5px 10px); }
-
-/* ---------- 讀數（主視覺）---------- */
-.readout { display: grid; gap: 14px; }
-.masthead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
-.masthead h1 { font-size: 15px; font-weight: 700; color: var(--muted); }
 .size {
-  font-family: var(--font-display); font-weight: 800; line-height: .92;
-  font-size: clamp(46px, 11vw, 104px); letter-spacing: -.01em;
+  font-family: var(--font-display); font-weight: 800; line-height: .9;
+  font-size: min(19cqi, 26svh); letter-spacing: -.01em;   /* JS fitSize() 會再放大到填滿欄寬 */
   font-variation-settings: "wdth" var(--wdth); font-variant-numeric: tabular-nums;
-  transition: font-variation-settings .45s cubic-bezier(.3, .7, .2, 1);
-  white-space: nowrap;
+  white-space: nowrap; overflow: hidden; width: max-content; max-width: 100%;
 }
-.size .x { color: var(--hinge); font-weight: 500; padding: 0 .06em; }
-.size-caption { color: var(--muted); font-size: 13px; }
-.state-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.size .x { color: var(--hinge); font-weight: 500; padding: 0 .05em; }
+.count {
+  font-family: var(--font-display); font-weight: 800; line-height: .9;
+  font-size: min(30cqi, 30svh); font-variant-numeric: tabular-nums; color: var(--accent);
+}
+.count-sub { font-size: 18px; font-weight: 700; }
+
+/* single：上下堆疊；dual：左右並排 */
+[data-layout="single"] .hero { grid-template-rows: auto auto; align-content: center; gap: 7svh; }
+[data-layout="dual"] .hero { grid-template-columns: 3fr 2fr; align-items: center; gap: 0; }
+/* C：左右兩個 segment，數字各自對齊一個螢幕 */
+[data-layout="span-h"] .hero { grid-template-columns: var(--seg-a) var(--hinge-size) var(--seg-b); }
+/* D：上下兩個 segment，上半尺寸、下半螢幕數 */
+[data-layout="span-v"] .hero { grid-template-rows: var(--seg-a) var(--hinge-size) var(--seg-b); }
+[data-layout^="span"] .hero { height: 100dvh; min-height: 0; }
+[data-layout^="span"] .hero .hinge { display: block; background: repeating-linear-gradient(45deg, var(--hinge) 0 5px, transparent 5px 10px); }
+
+/* ---------- 下方：詳細資訊 ---------- */
+.details { background: var(--surface); border-top: 2px solid var(--rule); display: grid; gap: 36px; padding-block: 28px 48px; }
+.details > .col { min-width: 0; display: flex; flex-direction: column; gap: 36px; }
+[data-layout="dual"] .details { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 40px; }
+[data-layout="span-h"] .details { grid-template-columns: var(--seg-a) var(--hinge-size) var(--seg-b); column-gap: 0; }
+[data-layout="span-h"] .details > .col:last-child { grid-column: 3; }
+.block { display: grid; gap: 12px; }
+.block > p, .block li { max-width: 62ch; }
+
+.state-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 .state-letter {
   font-family: var(--font-display); font-weight: 800; font-size: 20px; line-height: 1;
   width: 36px; height: 36px; display: grid; place-items: center; flex: none;
-  border-radius: 8px; background: var(--ink); color: var(--bg);
+  border-radius: 8px; background: var(--ink); color: var(--surface);
 }
-.state-name { font-size: 20px; font-weight: 700; }
+.state-name { font-size: 18px; font-weight: 700; }
 .state-sub { color: var(--muted); font-size: 14px; flex-basis: 100%; }
-.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 0; border-top: 1px solid var(--rule); }
-.facts div { padding: 10px 12px 10px 0; border-bottom: 1px solid var(--rule); }
-.facts b { display: block; white-space: nowrap; font-family: var(--font-display); font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.facts span { color: var(--muted); font-size: 12.5px; }
-.frame-note { font-size: 13px; color: var(--muted); border-top: 2px solid var(--hinge); }
 
-/* ---------- 比例圖 ---------- */
-.diagram { margin: 0; background: var(--surface); display: grid; gap: 10px; }
-.diagram svg { width: 100%; height: auto; max-height: 300px; display: block; }
-.diagram figcaption { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); }
-.key { display: inline-flex; align-items: center; gap: 6px; }
-.key i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
-.d-screen { fill: var(--bg); stroke: var(--ink); }
-.d-other { fill: url(#hatch); }
-.d-hatch-line { stroke: var(--hatch); }
-.d-window { fill: var(--accent-soft); stroke: var(--accent); }
-.d-fold { stroke: var(--hinge); stroke-dasharray: 6 5; }
-.d-hingeband { fill: var(--hinge); opacity: .85; }
-.d-label { fill: var(--accent); font-family: var(--font-display); font-weight: 700; }
-.d-fold-label { fill: var(--hinge); font-family: var(--font-body); font-weight: 700; }
+.modes { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.modes li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 2px 12px; padding-block: 10px; }
+.modes li:not([aria-current="true"]) { opacity: .5; }
+.modes svg { width: 44px; height: 34px; grid-row: span 2; }
+.modes h3 { font-size: 14.5px; }
+.modes p { font-size: 13.5px; color: var(--muted); }
+.modes li[aria-current="true"] p { color: var(--ink); }
+.m-body { fill: none; stroke: var(--ink); stroke-width: 2; }
+.m-fill { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
+.m-fold { stroke: var(--hinge); stroke-width: 2.4; }
 
-/* ---------- 一般區塊 ---------- */
-.block { display: grid; gap: 12px; }
-.block > p, .block li { max-width: 62ch; }
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 td { padding: 7px 8px 7px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
@@ -119,124 +110,81 @@ td:last-child { font-variant-numeric: tabular-nums; word-break: break-word; }
 .yes { color: var(--ok); font-weight: 700; }
 .no { color: var(--muted); }
 .copy-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 13px; color: var(--muted); }
-#copyFallback { width: 100%; min-height: 140px; font: 12px/1.5 ui-monospace, Consolas, monospace; background: var(--surface); color: var(--ink); border: 1px solid var(--rule); border-radius: 8px; padding: 8px; }
-
+#copyFallback { width: 100%; min-height: 140px; font: 12px/1.5 ui-monospace, Consolas, monospace; background: var(--bg); color: var(--ink); border: 1px solid var(--rule); border-radius: 8px; padding: 8px; }
 button {
   font: inherit; font-size: 13.5px; padding: 7px 12px; border-radius: 8px; cursor: pointer;
-  border: 1px solid var(--rule); background: var(--surface); color: var(--ink);
+  border: 1px solid var(--rule); background: var(--bg); color: var(--ink);
 }
 button:hover { border-color: var(--accent); }
-button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
-
-/* A–D 版型清單 */
-.modes { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.modes li { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 4px 14px; padding-block: 12px; }
-.modes li[aria-current="true"] { background: var(--surface); }
-.modes li:not([aria-current="true"]) { opacity: .62; }
-.modes svg { width: 52px; height: 40px; grid-row: span 2; }
-.modes h3 { font-size: 15px; }
-.modes p { font-size: 13.5px; color: var(--muted); }
-.modes li[aria-current="true"] p { color: var(--ink); }
-.m-body { fill: none; stroke: var(--ink); stroke-width: 2; }
-.m-fill { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
-.m-fold { stroke: var(--hinge); stroke-width: 2.4; }
+.frame-note { font-size: 13px; color: var(--muted); border-top: 2px solid var(--hinge); }
 
 ul.rules { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: 14px; }
-
 details { border-top: 1px solid var(--rule); padding-top: 12px; }
 summary { cursor: pointer; font-weight: 700; }
-pre { background: var(--surface); overflow-x: auto; margin: 12px 0 0; }
+pre { background: var(--bg); overflow-x: auto; margin: 12px 0 0; }
 
-
-@media (prefers-reduced-motion: reduce) { .size { transition: none; } }
 </style>
 
-<div class="app">
-  <!-- Pane A：讀數與量測（單欄時在上；跨摺痕時在第一個 segment） -->
-  <section class="pane pane-a">
-    <div class="readout">
-      <div class="masthead">
-        <h1>摺疊機版面偵測</h1>
-        <span class="size-caption" id="clock"></span>
-      </div>
-      <div>
-        <div class="size" id="bigSize" aria-live="polite">— <span class="x">×</span> —</div>
-        <p class="size-caption">網頁可用尺寸，CSS px。數字的字寬會跟著視窗寬度伸縮。</p>
-      </div>
-      <div class="state-line">
-        <span class="state-letter" id="stateLetter">–</span>
-        <span class="state-name" id="stateName">偵測中</span>
-        <span class="state-sub" id="stateSub"></span>
-      </div>
-      <div class="facts">
-        <div><b id="fScreen">–</b><span>整個螢幕</span></div>
-        <div><b id="fCount">–</b><span>螢幕分區數</span></div>
-        <div><b id="fClass">–</b><span>視窗尺寸級距</span></div>
-        <div><b id="fFill">–</b><span>視窗佔螢幕寬</span></div>
-      </div>
-      <p class="frame-note" id="frameNote" hidden>這個頁面嵌在其他網頁的框架裡（例如 Claude 的 Artifact 檢視器），量到的是框架尺寸，且瀏覽器通常不會把摺痕分區回報給框架。要量實機的完整數值，請把同一份 HTML 放到自己的網址直接開啟。</p>
+<main>
+  <!-- 第一屏：只放目前的寬／高與螢幕數 -->
+  <section class="hero" aria-live="polite">
+    <div class="hero-a">
+      <p class="label">網頁寬 × 高（CSS px）</p>
+      <div class="size" id="bigSize">— <span class="x">×</span> —</div>
     </div>
-
-    <figure class="diagram">
-      <svg id="diagram" role="img" aria-label="螢幕、視窗與摺痕位置比例圖"></svg>
-      <figcaption>
-        <span class="key"><i style="background:var(--accent-soft);border:1.5px solid var(--accent)"></i>網頁視窗</span>
-        <span class="key"><i style="background:repeating-linear-gradient(-45deg,var(--hatch) 0 2px,transparent 2px 5px);border:1.5px solid var(--ink)"></i>其他 App</span>
-        <span class="key"><i style="background:var(--hinge)"></i>摺痕／轉軸</span>
-      </figcaption>
-    </figure>
-
-    <section class="block">
-      <h2>完整偵測數據</h2>
-      <div class="table-wrap"><table><tbody id="metrics"></tbody></table></div>
-      <div class="copy-row">
-        <button id="copyBtn" type="button">複製數據</button>
-        <span>在實機上複製後貼回來，用來校正判斷門檻。</span>
-      </div>
-      <textarea id="copyFallback" readonly hidden aria-label="偵測數據文字"></textarea>
-    </section>
+    <div class="hinge" aria-hidden="true"></div>
+    <div class="hero-b">
+      <p class="label">螢幕數</p>
+      <div class="count" id="bigCount">–</div>
+      <p class="count-sub" id="countSub"></p>
+    </div>
   </section>
 
-  <div class="hinge" aria-hidden="true"></div>
+  <!-- 下方：目前版型、完整數據與其他說明 -->
+  <section class="details">
+    <div class="col">
+      <section class="block">
+        <h2>目前版型</h2>
+        <div class="state-line">
+          <span class="state-letter" id="stateLetter">–</span>
+          <span class="state-name" id="stateName">偵測中</span>
+          <span class="state-sub" id="stateSub"></span>
+        </div>
+        <p class="frame-note" id="frameNote" hidden>這個頁面嵌在其他網頁的框架裡（例如 Claude 的 Artifact 檢視器），量到的是框架尺寸，且瀏覽器通常不會把摺痕分區回報給框架。要量實機的完整數值，請直接開啟頁面網址。</p>
+        <ol class="modes" id="modes">
+          <li data-group="A">
+            <svg viewBox="0 0 52 40" aria-hidden="true"><rect class="m-body" x="17" y="2" width="18" height="36" rx="4"/><rect class="m-fill" x="20" y="7" width="12" height="4" rx="1"/><rect class="m-fill" x="20" y="14" width="12" height="4" rx="1"/><rect class="m-fill" x="20" y="21" width="12" height="4" rx="1"/><rect class="m-fill" x="20" y="28" width="12" height="4" rx="1"/></svg>
+            <h3>A. 窄版單視窗</h3>
+            <p>外螢幕、內螢幕分割視窗、浮動視窗。單欄內容、底部導覽、點清單項目後換頁。</p>
+          </li>
+          <li data-group="B">
+            <svg viewBox="0 0 52 40" aria-hidden="true"><rect class="m-body" x="2" y="4" width="48" height="32" rx="4"/><rect class="m-fill" x="6" y="8" width="15" height="24" rx="1.5"/><rect class="m-fill" x="24" y="8" width="22" height="11" rx="1.5"/><rect class="m-fill" x="24" y="21" width="22" height="11" rx="1.5"/></svg>
+            <h3>B. 寬版連續畫面</h3>
+            <p>內螢幕展開且網頁佔滿整片。雙欄 list-detail，避免把按鈕或標題斷行放在 50% 寬的摺痕處。</p>
+          </li>
+          <li data-group="C">
+            <svg viewBox="0 0 52 40" aria-hidden="true"><rect class="m-body" x="2" y="4" width="48" height="32" rx="4"/><rect class="m-fill" x="6" y="8" width="17" height="24" rx="1.5"/><rect class="m-fill" x="29" y="8" width="17" height="24" rx="1.5"/><line class="m-fold" x1="26" y1="4" x2="26" y2="36"/></svg>
+            <h3>C. 跨摺痕分區（左右）</h3>
+            <p>瀏覽器回報兩個 viewport segment。兩欄各對齊一個分區，轉軸區不放文字或按鈕。</p>
+          </li>
+          <li data-group="D">
+            <svg viewBox="0 0 52 40" aria-hidden="true"><rect class="m-body" x="2" y="4" width="48" height="32" rx="4"/><rect class="m-fill" x="6" y="8" width="40" height="9" rx="1.5"/><rect class="m-fill" x="6" y="23" width="40" height="9" rx="1.5"/><line class="m-fold" x1="2" y1="20" x2="50" y2="20"/></svg>
+            <h3>D. 半摺，上下分區</h3>
+            <p>筆電／桌上模式。上半部放內容，下半部放操作。</p>
+          </li>
+        </ol>
+      </section>
 
-  <!-- Pane B：設計建議與工具（跨摺痕時在第二個 segment；半摺時在下半部） -->
-  <section class="pane pane-b">
-    <section class="block">
-      <h2>四種版型，目前套用的是哪一種</h2>
-      <ol class="modes" id="modes">
-        <li data-group="A">
-          <svg viewBox="0 0 52 40" aria-hidden="true"><rect class="m-body" x="17" y="2" width="18" height="36" rx="4"/><rect class="m-fill" x="20" y="7" width="12" height="4" rx="1"/><rect class="m-fill" x="20" y="14" width="12" height="4" rx="1"/><rect class="m-fill" x="20" y="21" width="12" height="4" rx="1"/><rect class="m-fill" x="20" y="28" width="12" height="4" rx="1"/></svg>
-          <h3>A. 窄版單視窗</h3>
-          <p>外螢幕、內螢幕分割視窗、浮動視窗都在這類。單欄內容、底部導覽、點清單項目後換頁看詳細內容。實體是內螢幕也一樣：網頁只拿到一半寬度，就照手機版設計。</p>
-        </li>
-        <li data-group="B">
-          <svg viewBox="0 0 52 40" aria-hidden="true"><rect class="m-body" x="2" y="4" width="48" height="32" rx="4"/><rect class="m-fill" x="6" y="8" width="15" height="24" rx="1.5"/><rect class="m-fill" x="24" y="8" width="22" height="11" rx="1.5"/><rect class="m-fill" x="24" y="21" width="22" height="11" rx="1.5"/></svg>
-          <h3>B. 寬版連續畫面</h3>
-          <p>Z Fold8、iPhone Duo 展開內螢幕且網頁佔滿整片。雙欄 list-detail，導覽移到側邊。畫面正中央就是摺痕，避免把按鈕、標題斷行或影片中心放在 50% 寬處。</p>
-        </li>
-        <li data-group="C">
-          <svg viewBox="0 0 52 40" aria-hidden="true"><rect class="m-body" x="2" y="4" width="48" height="32" rx="4"/><rect class="m-fill" x="6" y="8" width="17" height="24" rx="1.5"/><rect class="m-fill" x="29" y="8" width="17" height="24" rx="1.5"/><line class="m-fold" x1="26" y1="4" x2="26" y2="36"/></svg>
-          <h3>C. 跨摺痕分區（左右）</h3>
-          <p>瀏覽器回報兩個 viewport segment 時才啟用。兩欄各對齊一個 segment，轉軸區不放文字或按鈕。適合左清單右內容、左原文右翻譯。</p>
-        </li>
-        <li data-group="D">
-          <svg viewBox="0 0 52 40" aria-hidden="true"><rect class="m-body" x="2" y="4" width="48" height="32" rx="4"/><rect class="m-fill" x="6" y="8" width="40" height="9" rx="1.5"/><rect class="m-fill" x="6" y="23" width="40" height="9" rx="1.5"/><line class="m-fold" x1="2" y1="20" x2="50" y2="20"/></svg>
-          <h3>D. 半摺，上下分區</h3>
-          <p>筆電／桌上模式。上半部放內容（影片、圖片、地圖），下半部放操作（播放控制、留言、鍵盤）。</p>
-        </li>
-      </ol>
-    </section>
-
-    <section class="block">
-      <h2>判斷邏輯</h2>
-      <ul class="rules">
-        <li><b>螢幕數量</b>：<code>window.viewport.segments</code> 回報 2 個以上分區，就是跨摺痕（C 或 D）。目前只有支援 Viewport Segments API 的 Chromium 瀏覽器會回報，iOS Safari 不支援。</li>
-        <li><b>內螢幕或外螢幕</b>：看實體螢幕形狀。長邊除以短邊小於 1.5 且短邊至少 600px 是內螢幕；短邊小於 520px 是外螢幕或一般手機。</li>
-        <li><b>連續畫面或多工視窗</b>：視窗寬度不到螢幕的 90%，或高度不到 70%，代表分割畫面或浮動視窗，當作單螢幕處理。</li>
-        <li><b>最後由視窗寬度決定版型</b>：小於 600px 單欄，600px 以上雙欄。裝置狀態只用來微調細節，這是 Material 3 與 Apple 自適應版面目前的共同做法。</li>
-      </ul>
-      <details>
-        <summary>純 CSS 寫法</summary>
+      <section class="block">
+        <h2>判斷邏輯</h2>
+        <ul class="rules">
+          <li><b>螢幕數</b>：<code>window.viewport.segments</code> 回報 2 個以上分區，就是跨摺痕（C 或 D）。目前只有支援 Viewport Segments API 的 Chromium 瀏覽器會回報，iOS Safari 不支援。</li>
+          <li><b>內螢幕或外螢幕</b>：長邊除以短邊小於 1.5 且短邊至少 600px 是內螢幕；短邊小於 520px 是外螢幕或一般手機。</li>
+          <li><b>連續畫面或多工視窗</b>：視窗寬度不到螢幕的 90%，或高度不到 70%，當作單螢幕處理。</li>
+          <li><b>版型</b>：最後由視窗寬度決定，小於 600px 單欄，600px 以上雙欄。</li>
+        </ul>
+        <details>
+          <summary>純 CSS 寫法</summary>
 <pre>/* A：窄版單欄（預設） */
 .app { display: grid; grid-template-columns: 1fr; }
 
@@ -267,10 +215,23 @@ pre { background: var(--surface); overflow-x: auto; margin: 12px 0 0; }
 
 /* 摺疊姿態（Device Posture API） */
 @media (device-posture: folded) { /* 書本／筆電姿勢 */ }</pre>
-      </details>
-    </section>
+        </details>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="block">
+        <h2>完整偵測數據</h2>
+        <div class="table-wrap"><table><tbody id="metrics"></tbody></table></div>
+        <div class="copy-row">
+          <button id="copyBtn" type="button">複製數據</button>
+          <span>在實機上複製後貼回來，用來校正判斷門檻。</span>
+        </div>
+        <textarea id="copyFallback" readonly hidden aria-label="偵測數據文字"></textarea>
+      </section>
+    </div>
   </section>
-</div>
+</main>
 
 <script>
 let FRAMED = false;
@@ -298,7 +259,7 @@ function readEnv() {
     vw: visualViewport?.width ?? innerWidth, vh: visualViewport?.height ?? innerHeight,
     sw: screen.width, sh: screen.height, aw: screen.availWidth, ah: screen.availHeight,
     dpr: devicePixelRatio, coarse: mq("(pointer: coarse)"),
-    posture: readPosture(), segments: readSegments(), winAt: [0, 0],
+    posture: readPosture(), segments: readSegments(),
     orientation: screen.orientation?.type ?? (mq("(orientation: landscape)") ? "landscape" : "portrait"),
     displayMode: ["fullscreen", "standalone", "minimal-ui"].find(m => mq(`(display-mode: ${m})`)) ?? "browser",
   };
@@ -350,49 +311,12 @@ const STATES = {
   "span-v":           { name: "半摺，上下兩區",     group: "D", sub: "筆電或桌上模式，上下各一個分區。" },
 };
 
+const COUNT_SUB = { "span-h": "左右兩個分區", "span-v": "上下兩個分區" };
+
 const $ = id => document.getElementById(id);
 const yn = v => v ? `<span class="yes">是</span>` : `<span class="no">否</span>`;
 const px = (a, b) => `${Math.round(a)} × ${Math.round(b)}`;
-const NS = "http://www.w3.org/2000/svg";
 let lastReport = "";
-
-function svgEl(tag, attrs, text) {
-  const el = document.createElementNS(NS, tag);
-  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
-  if (text != null) el.textContent = text;
-  return el;
-}
-
-// 依實際比例畫出：整個螢幕、網頁視窗、摺痕
-function drawDiagram(env, r) {
-  const svg = $("diagram");
-  const { sw, sh } = r, [wx, wy] = env.winAt;
-  const pad = Math.max(sw, sh) * 0.02, unit = Math.max(sw, sh) / 100;
-  svg.setAttribute("viewBox", `${-pad} ${-pad} ${sw + pad * 2} ${sh + pad * 2}`);
-  const defs = svgEl("defs", {});
-  const pat = svgEl("pattern", { id: "hatch", width: unit * 2.4, height: unit * 2.4, patternUnits: "userSpaceOnUse", patternTransform: "rotate(-45)" });
-  pat.append(svgEl("line", { class: "d-hatch-line", x1: 0, y1: 0, x2: 0, y2: unit * 2.4, "stroke-width": unit * 0.5 }));
-  defs.append(pat);
-  const nodes = [defs];
-  const radius = Math.min(sw, sh) * 0.05;
-  nodes.push(svgEl("rect", { class: "d-screen", x: 0, y: 0, width: sw, height: sh, rx: radius, "stroke-width": unit * 0.8 }));
-  const partial = env.w < sw - 1 || env.h < sh - 1;
-  if (partial && r.screenType !== "desktop") nodes.push(svgEl("rect", { class: "d-other", x: 0, y: 0, width: sw, height: sh, rx: radius }));
-  const ww = Math.min(env.w, sw), wh = Math.min(env.h, sh);
-  nodes.push(svgEl("rect", { class: "d-window", x: wx, y: wy, width: ww, height: wh, rx: partial ? radius * 0.6 : radius, "stroke-width": unit * 0.6 }));
-
-  if (env.segments.length >= 2) {
-    const [a, b] = env.segments;
-    if (r.layout === "span-h") nodes.push(svgEl("rect", { class: "d-hingeband", x: wx + a.x + a.width, y: wy, width: Math.max(unit * 0.8, b.x - a.x - a.width), height: wh }));
-    else nodes.push(svgEl("rect", { class: "d-hingeband", x: wx, y: wy + a.y + a.height, width: ww, height: Math.max(unit * 0.8, b.y - a.y - a.height) }));
-  } else if (r.screenType === "inner") {
-    // 書本式摺疊機的摺痕在內螢幕寬度的正中央
-    nodes.push(svgEl("line", { class: "d-fold", x1: sw / 2, y1: -pad * 0.6, x2: sw / 2, y2: sh + pad * 0.6, "stroke-width": unit * 0.7, "stroke-dasharray": `${unit * 2} ${unit * 1.4}` }));
-    nodes.push(svgEl("text", { class: "d-fold-label", x: sw / 2 + unit * 1.4, y: unit * 5, "font-size": unit * 3.6 }, "摺痕"));
-  }
-  nodes.push(svgEl("text", { class: "d-label", x: wx + ww / 2, y: wy + wh / 2, "text-anchor": "middle", "dominant-baseline": "middle", "font-size": Math.min(ww, wh) * 0.12 }, px(env.w, env.h)));
-  svg.replaceChildren(...nodes);
-}
 
 function render() {
   const env = readEnv();
@@ -413,16 +337,14 @@ function render() {
   }
 
   $("bigSize").innerHTML = `${Math.round(env.w)}<span class="x">×</span>${Math.round(env.h)}`;
+  fitSize();
+  $("bigCount").textContent = r.screenCount;
+  $("countSub").textContent = COUNT_SUB[r.state] ?? (r.multiWindow ? "單一畫面，多工視窗" : "單一畫面");
   $("stateLetter").textContent = meta.group;
   $("stateName").textContent = meta.name;
   $("stateSub").textContent = meta.sub;
-  $("fScreen").textContent = px(r.sw, r.sh);
-  $("fCount").textContent = r.screenCount;
-  $("fClass").textContent = r.sizeClass;
-  $("fFill").textContent = `${Math.round(r.fillW * 100)}%`;
   $("frameNote").hidden = !FRAMED;
   for (const li of $("modes").children) li.setAttribute("aria-current", String(li.dataset.group === meta.group));
-  drawDiagram(env, r);
 
   const segText = env.segments.length
     ? env.segments.map((s, i) => `#${i}：${px(s.width, s.height)}，位置 (${Math.round(s.x)}, ${Math.round(s.y)})`).join("<br>")
@@ -436,6 +358,7 @@ function render() {
     ["screen.availWidth × availHeight", px(env.aw, env.ah)],
     ["實體像素（螢幕 × DPR）", px(r.sw * env.dpr, r.sh * env.dpr)],
     ["devicePixelRatio", env.dpr.toFixed(3)],
+    ["視窗尺寸級距", r.sizeClass],
     ["螢幕長寬比（長邊／短邊）", r.screenRatio.toFixed(2)],
     ["螢幕類型推測", r.screenType],
     ["視窗佔螢幕（寬／高）", `${Math.round(r.fillW * 100)}%／${Math.round(r.fillH * 100)}%`],
@@ -451,6 +374,17 @@ function render() {
   lastReport = rows.map(([k, v]) => `${k}: ${String(v).replace(/<br>/g, " | ").replace(/<[^>]+>/g, "")}`).join("\n")
     + `\nUA: ${navigator.userAgent}`;
 }
+
+// 讓「寬 × 高」數字填滿所在欄寬，但不超過畫面高度的 26%
+function fitSize() {
+  const el = $("bigSize"), box = el.parentElement;
+  el.style.fontSize = "100px";
+  const perPx = el.scrollWidth / 100;
+  // 上下分區時，高度上限改用上半部分區的高度
+  const cap = document.documentElement.dataset.layout === "span-v" ? box.clientHeight * 0.5 : innerHeight * 0.26;
+  el.style.fontSize = Math.min(box.clientWidth * 0.97 / perPx, cap) + "px";
+}
+document.fonts?.ready.then(fitSize);
 
 $("copyBtn").onclick = () => {
   const done = () => { $("copyBtn").textContent = "已複製"; setTimeout(() => $("copyBtn").textContent = "複製數據", 1500); };
